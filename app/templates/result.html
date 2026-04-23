@@ -1,0 +1,471 @@
+{% extends "base.html" %}
+{% block title %}생성 결과{% endblock %}
+{% block content %}
+<section class="panel result-grid">
+  <div class="result-main">
+    <div class="panel-header">
+      <div>
+        <p class="section-label">STEP 2</p>
+        <h2>생성 결과</h2>
+      </div>
+      <div class="meta-badges">
+        <span>{{ form.tone }}</span>
+        <span>{{ form.campaign_type }}</span>
+        <span>{{ form.visual_style }}</span>
+        <span>{{ result.provider_used }}</span>
+      </div>
+    </div>
+    {% if warning %}
+    <div class="warning">{{ warning }}</div>
+    {% endif %}
+    {% if campaign %}
+    <div class="campaign-status">
+      <div>
+        <p class="support-label">Campaign ID</p>
+        <strong>{{ campaign.id }}</strong>
+      </div>
+      <div>
+        <p class="support-label">자동예약 상태</p>
+        <strong>
+          {% if campaign.status == "ready_for_schedule" %}예약 준비 완료
+          {% elif campaign.status == "scheduled" %}예약됨
+          {% elif campaign.status == "published" %}게시 완료
+          {% else %}초안{% endif %}
+        </strong>
+      </div>
+      <a class="ghost-link" href="/campaigns">이력 보기</a>
+    </div>
+    {% endif %}
+    <div class="strategy-grid">
+      <article class="insight-card">
+        <p class="support-label">전략 메모</p>
+        <strong>{{ result.strategy_note }}</strong>
+      </article>
+      <article class="insight-card">
+        <p class="support-label">권장 비주얼 방향</p>
+        <strong>{{ result.image_direction }}</strong>
+      </article>
+    </div>
+    <div class="quality-panel">
+      <div class="score-ring" style="--score: {{ result.quality_report.overall_score }}">
+        <span>{{ result.quality_report.overall_score }}</span>
+        <small>전체 점수</small>
+      </div>
+      <div class="score-list">
+        <p><strong>후킹</strong><span>{{ result.quality_report.hook_score }}</span></p>
+        <p><strong>명확성</strong><span>{{ result.quality_report.clarity_score }}</span></p>
+        <p><strong>CTA</strong><span>{{ result.quality_report.cta_score }}</span></p>
+        <p><strong>채널 적합도</strong><span>{{ result.quality_report.channel_fit_score }}</span></p>
+      </div>
+      <div class="suggestions">
+        <p class="support-label">수정 제안</p>
+        {% for suggestion in result.quality_report.improvement_suggestions %}
+        <p>{{ suggestion }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="channel-quality-panel">
+      <div>
+        <p class="support-label">자동 생성 판정</p>
+        <h3>{% if result.auto_approved %}품질 기준 통과{% else %}검수 필요{% endif %}</h3>
+        <p class="mini-note">생성 시도 {{ result.generation_attempts }}회</p>
+      </div>
+      <div class="score-list">
+        <p><strong>Instagram</strong><span>{{ result.channel_quality.instagram_score }}</span></p>
+        <p><strong>Threads</strong><span>{{ result.channel_quality.threads_score }}</span></p>
+        <p><strong>Blog</strong><span>{{ result.channel_quality.blog_score }}</span></p>
+      </div>
+      <div class="suggestions">
+        <p class="support-label">채널별 재생성 힌트</p>
+        {% for suggestion in result.channel_quality.regeneration_suggestions %}
+        <p>{{ suggestion }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <details class="poster-details">
+      <summary>보조 포스터 문구 보기</summary>
+      <p><strong>{{ result.channel_packages.poster.headline }}</strong></p>
+      <p>{{ result.channel_packages.poster.subcopy }} {{ result.channel_packages.poster.cta }}</p>
+      <p class="mini-note">{{ result.channel_packages.poster.visual_direction }}</p>
+    </details>
+    <div class="checklist-card">
+      <p class="support-label">자동예약 전 체크리스트</p>
+      {% for item in result.pre_publish_checklist %}
+      <p>{{ item }}</p>
+      {% endfor %}
+    </div>
+    {% if campaign and campaign.publish_jobs %}
+    <div class="checklist-card">
+      <p class="support-label">예약/게시 작업</p>
+      {% for job in campaign.publish_jobs %}
+      <p>
+        <strong>{{ job.status }}</strong>
+        {{ job.channels | join(", ") }} / {{ job.scheduled_at.strftime("%Y-%m-%d %H:%M") }}
+        / {{ job.provider }}
+        {% if job.sequence_total > 1 %}/ {{ job.recurrence }} {{ job.sequence_index }}/{{ job.sequence_total }}{% endif %}
+        {% if job.external_ids %}/ {{ job.external_ids }}{% endif %}
+      </p>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="variants">
+      {% for variant in result.variants %}
+      <article class="variant-card">
+        <div class="variant-top">
+          <p>{{ variant.label }}</p>
+          <button type="button" class="copy-btn" data-copy-target="copy-{{ loop.index }}">복사</button>
+        </div>
+        <h3>{{ variant.headline }}</h3>
+        <p id="copy-{{ loop.index }}">{{ variant.body_copy }}</p>
+      </article>
+      {% endfor %}
+    </div>
+
+    <div class="support-box">
+      <div>
+        <p class="support-label">CTA</p>
+        <strong>{{ result.cta }}</strong>
+      </div>
+      <div>
+        <p class="support-label">추천 해시태그</p>
+        <div class="hashtags">
+          {% for hashtag in result.hashtags %}
+          <span>{{ hashtag }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <article class="caption-card">
+      <div class="variant-top">
+        <p class="support-label">호환용 통합 캡션</p>
+        <button type="button" class="copy-btn" data-copy-target="full-caption">캡션 복사</button>
+      </div>
+      <p id="full-caption">{{ result.caption }}</p>
+    </article>
+  </div>
+
+  <section class="upload-preview-panel">
+    <div class="workbench-topbar">
+      <div>
+        <p class="section-label">LIVE PUBLISH WORKBENCH</p>
+        <h3>업로드 전 피드 미리보기</h3>
+        <p class="mini-note preview-note">
+          오른쪽에서 문구를 다듬으면 왼쪽 Instagram 피드 초안에 바로 반영됩니다. 실제 게시 전 최종 검수용 화면입니다.
+        </p>
+      </div>
+      <span class="status-pill dark-pill">게시 전 편집 모드</span>
+    </div>
+
+    <div class="channel-preview-board">
+      <article class="live-preview-card" aria-label="Instagram 피드 미리보기">
+        <div class="device-frame">
+          <div class="device-status">
+            <span>{{ form.business_name }}_official</span>
+            <small>Instagram · Sponsored</small>
+          </div>
+          <div class="device-media">
+            <img src="{{ result.banner_preview_path }}" alt="Instagram 업로드 이미지 예상 초안" />
+          </div>
+          <div class="device-actions" aria-label="Instagram 반응 버튼 미리보기">
+            <span>좋아요</span>
+            <span>댓글</span>
+            <span>공유</span>
+            <span>저장</span>
+          </div>
+          <p class="like-count">좋아요 8,241개</p>
+          <p class="live-caption">
+            <strong>{{ form.business_name }}</strong>
+            <span id="live-instagram-caption">{{ result.channel_packages.instagram.caption }}</span>
+          </p>
+          <div id="live-hashtag-preview" class="live-hashtag-preview">
+            {% for hashtag in result.channel_packages.instagram.hashtags %}
+            <span>{{ hashtag }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+
+      <article class="live-preview-card" aria-label="Threads 게시글 미리보기">
+        <div class="device-frame threads-device">
+          <div class="device-status">
+            <span>{{ form.business_name }}</span>
+            <small>Threads · 초안</small>
+          </div>
+          <div class="thread-live-body">
+            <strong id="live-threads-hook">{{ result.channel_packages.threads.short_hook }}</strong>
+            <p id="live-threads-text">{{ result.channel_packages.threads.thread_text }}</p>
+            <small id="live-threads-reply">{{ result.channel_packages.threads.reply_prompt }}</small>
+          </div>
+          <div class="thread-mini-image">
+            <img src="{{ result.banner_preview_path }}" alt="Threads 첨부 이미지 예상 초안" />
+          </div>
+          <div class="thread-actions">
+            <span>답글</span><span>리포스트</span><span>공유</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="live-preview-card" aria-label="Blog 게시글 미리보기">
+        <div class="device-frame blog-device">
+          <div class="blog-browser-bar">
+            <span></span><span></span><span></span>
+            <strong>Blog Preview</strong>
+          </div>
+          <div class="device-media blog-device-media">
+            <img src="{{ result.banner_preview_path }}" alt="블로그 대표 이미지 예상 초안" />
+          </div>
+          <div class="blog-live-body">
+            <small>검색/블로그용 초안</small>
+            <h4 id="live-blog-title">{{ result.channel_packages.blog.title }}</h4>
+            <p id="live-blog-intro">{{ result.channel_packages.blog.intro }}</p>
+            <strong id="live-blog-cta">{{ result.channel_packages.blog.cta }}</strong>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <div class="browser-workbench editor-workbench">
+      <article class="edit-studio-card" aria-label="게시글 수정 패널">
+        <div class="studio-heading">
+          <div>
+            <p class="section-label">EDIT BEFORE POST</p>
+            <h3>3채널 글 수정하기</h3>
+          </div>
+          <span class="status-dot">Live</span>
+        </div>
+        <label>
+          <span>Instagram 캡션</span>
+          <textarea id="live-caption-editor" rows="8">{{ result.channel_packages.instagram.caption }}</textarea>
+        </label>
+        <label>
+          <span>해시태그</span>
+          <textarea id="live-hashtags-editor" rows="4">{{ result.channel_packages.instagram.hashtags | join(" ") }}</textarea>
+        </label>
+        <label>
+          <span>Threads 본문</span>
+          <textarea id="live-threads-editor" rows="7">{{ result.channel_packages.threads.thread_text }}</textarea>
+        </label>
+        <label>
+          <span>Threads 댓글 유도</span>
+          <textarea id="live-threads-reply-editor" rows="3">{{ result.channel_packages.threads.reply_prompt }}</textarea>
+        </label>
+        <label>
+          <span>Blog 제목</span>
+          <input id="live-blog-title-editor" type="text" value="{{ result.channel_packages.blog.title }}" />
+        </label>
+        <label>
+          <span>Blog 도입문</span>
+          <textarea id="live-blog-intro-editor" rows="5">{{ result.channel_packages.blog.intro }}</textarea>
+        </label>
+        <label>
+          <span>Blog CTA</span>
+          <input id="live-blog-cta-editor" type="text" value="{{ result.channel_packages.blog.cta }}" />
+        </label>
+        <div class="studio-tip">
+          <strong>검수 팁</strong>
+          <p>Instagram은 첫 문장 후킹, Threads는 대화감, Blog는 검색형 제목과 충분한 정보량을 우선 확인해 주세요.</p>
+        </div>
+        <button type="button" class="secondary-btn disabled-action">3채널 업로드 준비</button>
+        <div class="automation-status">
+          <span>n8n 업로드 큐 연결 대기</span>
+          <div><i style="width: 42%"></i></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <aside class="result-side">
+    <div class="banner-card">
+      <p class="section-label">BANNER PREVIEW</p>
+      <img src="{{ result.banner_preview_path }}" alt="광고 배너 미리보기" />
+      <a class="ghost-link banner-download" href="{{ result.banner_preview_path }}" download>배너 이미지 다운로드</a>
+    </div>
+    <div class="account-connect-card">
+      <div class="variant-top">
+        <div>
+          <p class="section-label">CHANNEL LOGIN</p>
+          <h3>게시 채널 연결</h3>
+        </div>
+        <span class="status-pill">준비 단계</span>
+      </div>
+      <div class="provider-row">
+        <div>
+          <strong>Instagram</strong>
+          <small>Meta OAuth 필요</small>
+        </div>
+        <button type="button" class="outline-btn disabled-action">로그인 준비</button>
+      </div>
+      <div class="provider-row">
+        <div>
+          <strong>Blog</strong>
+          <small>플랫폼별 API 연결 예정</small>
+        </div>
+        <button type="button" class="outline-btn disabled-action">로그인 준비</button>
+      </div>
+      <p class="mini-note">지금은 안전한 UI 프로토타입입니다. 실제 연결은 비밀번호 저장이 아니라 OAuth/API 토큰 방식으로 붙이는 게 맞습니다.</p>
+    </div>
+    {% if result.background_asset %}
+    <div class="background-prompt-card">
+      <div class="variant-top">
+        <div>
+          <p class="section-label">IMAGE API READY</p>
+          <h3>AI 배경 이미지 프롬프트</h3>
+        </div>
+        <span class="status-pill">{{ result.background_asset.status }}</span>
+      </div>
+      <textarea id="background-prompt" class="prompt-box" readonly>{{ result.background_asset.prompt }}</textarea>
+      <button type="button" class="outline-btn copy-btn" data-copy-target="background-prompt">프롬프트 복사</button>
+      {% if result.background_asset.note %}
+      <p class="mini-note">{{ result.background_asset.note }}</p>
+      {% endif %}
+      {% if result.background_asset.image_path %}
+      <p class="mini-note">자동 생성 배경: {{ result.background_asset.provider }}</p>
+      {% else %}
+      <p class="mini-note">비용 방지 모드에서는 프롬프트만 만들고, GPT Image 또는 Nano Banana로 만든 이미지를 업로드하는 흐름입니다.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+    <div class="action-card">
+      {% if campaign %}
+      <form action="/campaigns/{{ campaign.id }}/ready" method="post" class="prefill-form">
+        <button type="submit" class="secondary-btn">예약 준비 완료로 표시</button>
+      </form>
+      <form action="/campaigns/{{ campaign.id }}/schedule" method="post" class="schedule-form">
+        <p class="support-label">자동 업로드 예약</p>
+        <label class="inline-check">
+          <input type="checkbox" name="instagram" value="1" checked />
+          Instagram
+        </label>
+        <label class="inline-check">
+          <input type="checkbox" name="threads" value="1" checked />
+          Threads
+        </label>
+        <label class="inline-check">
+          <input type="checkbox" name="blog" value="1" checked />
+          Blog
+        </label>
+        <label>
+          자동화 방식
+          <select name="automation_provider">
+            <option value="n8n" selected>n8n 실제 업로드 큐</option>
+            <option value="mock">Mock 테스트 게시</option>
+          </select>
+        </label>
+        <label>
+          예약 시간
+          <input type="datetime-local" name="scheduled_at" />
+        </label>
+        <label>
+          반복
+          <select name="repeat_interval">
+            <option value="none" selected>한 번만</option>
+            <option value="daily">매일 같은 시간</option>
+            <option value="weekly">매주 같은 요일/시간</option>
+          </select>
+        </label>
+        <label>
+          반복 횟수
+          <input type="number" name="repeat_count" min="1" max="30" value="1" />
+        </label>
+        <p class="mini-note">n8n Cron이 `/api/publish-jobs/due`를 주기적으로 확인하면 예약 시간에 맞춰 자동 업로드됩니다.</p>
+        <button type="submit" class="secondary-btn">자동 업로드 예약 저장</button>
+      </form>
+      <form action="/campaigns/{{ campaign.id }}/publish-now" method="post" class="prefill-form">
+        <button type="submit" class="outline-btn">Mock 게시 실행</button>
+      </form>
+      <form action="/campaigns/{{ campaign.id }}/regenerate" method="post" class="prefill-form">
+        <button type="submit" class="outline-btn">같은 브리프로 재생성</button>
+      </form>
+      {% endif %}
+      <form action="/" method="get" class="prefill-form">
+        <input type="hidden" name="business_category" value="{{ form.business_category }}" />
+        <input type="hidden" name="business_name" value="{{ form.business_name }}" />
+        <input type="hidden" name="product_name" value="{{ form.product_name }}" />
+        <input type="hidden" name="product_description" value="{{ form.product_description }}" />
+        <input type="hidden" name="offer_details" value="{{ form.offer_details }}" />
+        <input type="hidden" name="target_customer" value="{{ form.target_customer }}" />
+        <input type="hidden" name="promotion_goal" value="{{ form.promotion_goal }}" />
+        <input type="hidden" name="tone" value="{{ form.tone }}" />
+        <input type="hidden" name="platform" value="{{ form.platform }}" />
+        <input type="hidden" name="visual_style" value="{{ form.visual_style }}" />
+        <input type="hidden" name="cta_focus" value="{{ form.cta_focus }}" />
+        <input type="hidden" name="campaign_type" value="{{ form.campaign_type }}" />
+        <input type="hidden" name="desired_action" value="{{ form.desired_action }}" />
+        <input type="hidden" name="post_timing_preference" value="{{ form.post_timing_preference }}" />
+        <input type="hidden" name="keywords" value="{{ form.keywords }}" />
+        <button type="submit" class="secondary-btn">입력 유지하고 수정하기</button>
+      </form>
+      <a class="ghost-link" href="/">새 브리프로 시작하기</a>
+    </div>
+  </aside>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll(".copy-btn").forEach((button) => {
+    const originalLabel = button.textContent;
+    button.addEventListener("click", async () => {
+      const target = document.getElementById(button.dataset.copyTarget);
+      await navigator.clipboard.writeText((target.value || target.textContent).trim());
+      button.textContent = "복사됨";
+      setTimeout(() => {
+        button.textContent = originalLabel;
+      }, 1200);
+    });
+  });
+
+  const captionEditor = document.getElementById("live-caption-editor");
+  const hashtagEditor = document.getElementById("live-hashtags-editor");
+  const captionPreview = document.getElementById("live-instagram-caption");
+  const hashtagPreview = document.getElementById("live-hashtag-preview");
+  const threadsEditor = document.getElementById("live-threads-editor");
+  const threadsPreview = document.getElementById("live-threads-text");
+  const threadsReplyEditor = document.getElementById("live-threads-reply-editor");
+  const threadsReplyPreview = document.getElementById("live-threads-reply");
+  const blogTitleEditor = document.getElementById("live-blog-title-editor");
+  const blogTitlePreview = document.getElementById("live-blog-title");
+  const blogIntroEditor = document.getElementById("live-blog-intro-editor");
+  const blogIntroPreview = document.getElementById("live-blog-intro");
+  const blogCtaEditor = document.getElementById("live-blog-cta-editor");
+  const blogCtaPreview = document.getElementById("live-blog-cta");
+
+  if (captionEditor && captionPreview) {
+    captionEditor.addEventListener("input", () => {
+      captionPreview.textContent = captionEditor.value.trim() || "캡션을 입력하면 이곳에 바로 반영됩니다.";
+    });
+  }
+
+  if (hashtagEditor && hashtagPreview) {
+    const renderHashtags = () => {
+      const tags = hashtagEditor.value
+        .split(/\s+/)
+        .map((tag) => tag.trim())
+        .filter(Boolean)
+        .slice(0, 12);
+      hashtagPreview.innerHTML = "";
+      tags.forEach((tag) => {
+        const chip = document.createElement("span");
+        chip.textContent = tag.startsWith("#") ? tag : `#${tag}`;
+        hashtagPreview.appendChild(chip);
+      });
+    };
+
+    hashtagEditor.addEventListener("input", renderHashtags);
+    renderHashtags();
+  }
+
+  const bindLiveText = (editor, preview, fallback) => {
+    if (!editor || !preview) return;
+    editor.addEventListener("input", () => {
+      preview.textContent = editor.value.trim() || fallback;
+    });
+  };
+
+  bindLiveText(threadsEditor, threadsPreview, "Threads 본문을 입력하면 이곳에 반영됩니다.");
+  bindLiveText(threadsReplyEditor, threadsReplyPreview, "댓글 유도 문장을 입력해 주세요.");
+  bindLiveText(blogTitleEditor, blogTitlePreview, "블로그 제목을 입력해 주세요.");
+  bindLiveText(blogIntroEditor, blogIntroPreview, "블로그 도입문을 입력하면 이곳에 반영됩니다.");
+  bindLiveText(blogCtaEditor, blogCtaPreview, "CTA를 입력해 주세요.");
+</script>
+{% endblock %}

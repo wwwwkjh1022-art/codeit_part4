@@ -1,0 +1,131 @@
+# 소상공인 SNS 홍보 콘텐츠 생성 평가 데이터셋
+# 참고 구조: question/expected_answer/ground_truth 대신
+# input_brief/expected_terms/expected_channels/min_scores를 사용합니다.
+
+- id: cafe-season-menu
+  title: 카페 신메뉴 인스타/스레드 홍보
+  input_brief:
+    business_category: 카페
+    business_name: 오늘의카페
+    product_name: 딸기 라떼
+    product_description: 생딸기를 갈아 넣은 시즌 한정 메뉴로 상큼하고 부드러운 맛이 특징입니다.
+    offer_details: 첫 방문 고객 10% 할인
+    target_customer: 20대 직장인
+    promotion_goal: 신메뉴 홍보
+    tone: 친근한
+    platform: 인스타그램
+    visual_style: 따뜻한 감성
+    cta_focus: 방문 유도
+    campaign_type: 신상품/신메뉴
+    desired_action: 매장 방문
+    post_timing_preference: AI 추천
+    keywords: 시즌메뉴, 생딸기, 사진맛집
+  expected_terms:
+    - 딸기
+    - 라떼
+    - 오늘의카페
+    - 방문
+  expected_channels:
+    - instagram
+    - threads
+    - blog
+  min_scores:
+    overall: 88
+    channel: 86
+  memo: 시즌성, 시각 후킹, 방문 유도 CTA가 모두 살아야 하는 케이스
+
+- id: flower-event
+  title: 꽃집 기간 한정 예약 이벤트
+  input_brief:
+    business_category: 꽃집
+    business_name: 라일락플라워
+    product_name: 봄꽃다발
+    product_description: 기념일과 집들이에 어울리는 화사한 색감의 꽃다발입니다.
+    offer_details: 주말 예약 고객 무료 포장
+    target_customer: 동네 주민
+    promotion_goal: 신규 고객 유입
+    tone: 정중한
+    platform: 인스타그램
+    visual_style: 프리미엄
+    cta_focus: 문의 유도
+    campaign_type: 기간 한정 이벤트
+    desired_action: DM 문의
+    post_timing_preference: 주말 오전
+    keywords: 당일 제작, 예약 가능, 무료 포장
+  expected_terms:
+    - 봄꽃
+    - 예약
+    - 포장
+    - 라일락플라워
+  expected_channels:
+    - instagram
+    - threads
+    - blog
+  min_scores:
+    overall: 88
+    channel: 86
+  memo: 혜택 조건과 문의 유도가 명확해야 하는 예약 이벤트 케이스
+
+- id: nail-reservation
+  title: 네일샵 예약 전환 캠페인
+  input_brief:
+    business_category: 네일샵
+    business_name: 오후네일
+    product_name: 봄 젤네일
+    product_description: 파스텔 컬러와 진주 포인트가 들어간 시즌 디자인입니다.
+    offer_details: 주중 예약 시 오프 할인
+    target_customer: 20대 직장인
+    promotion_goal: 예약 전환
+    tone: 트렌디한
+    platform: 인스타그램
+    visual_style: 산뜻한 시즌형
+    cta_focus: 예약 유도
+    campaign_type: 예약/상담 전환
+    desired_action: 예약하기
+    post_timing_preference: 평일 저녁
+    keywords: 예약 할인, 봄 디자인, 파스텔
+  expected_terms:
+    - 네일
+    - 예약
+    - 봄
+    - 오후네일
+  expected_channels:
+    - instagram
+    - threads
+    - blog
+  min_scores:
+    overall: 88
+    channel: 86
+  memo: 예약 전환과 시즌 비주얼 방향이 중요한 케이스
+
+- id: restaurant-revisit
+  title: 식당 재방문 유도 이벤트
+  input_brief:
+    business_category: 식당
+    business_name: 한그릇식당
+    product_name: 점심 정식
+    product_description: 직장인을 위한 빠르고 든든한 점심 정식으로 매일 다른 반찬을 제공합니다.
+    offer_details: 재방문 쿠폰 지참 시 음료 제공
+    target_customer: 근처 직장인
+    promotion_goal: 재방문 유도
+    tone: 활기찬
+    platform: Threads
+    visual_style: 강한 세일형
+    cta_focus: 방문 유도
+    campaign_type: 재방문 유도
+    desired_action: 매장 방문
+    post_timing_preference: 평일 점심
+    keywords: 점심, 빠른 식사, 재방문 쿠폰
+  expected_terms:
+    - 점심
+    - 직장인
+    - 재방문
+    - 한그릇식당
+  expected_channels:
+    - instagram
+    - threads
+    - blog
+  min_scores:
+    overall: 88
+    channel: 86
+  memo: Threads 대화형 문구와 오프라인 방문 유도가 모두 필요한 케이스

@@ -1,0 +1,2 @@
+"""Concrete copy generator adapters."""
+

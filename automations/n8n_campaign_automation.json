@@ -1,0 +1,249 @@
+{
+  "name": "Ad Copy Studio - Campaign Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "ad-campaign-automation",
+        "httpMethod": "POST",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-start",
+      "name": "Webhook: Brief Received",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -860,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{$json.body?.fastapi_base_url || $json.fastapi_base_url || 'http://127.0.0.1:8000'}}/api/campaigns/generate",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify($json.body?.brief || $json.brief || $json.body || $json)}}",
+        "options": {
+          "timeout": 180000
+        }
+      },
+      "id": "generate-campaign",
+      "name": "FastAPI: Generate Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -580,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "auto-approved",
+              "leftValue": "={{$json.campaign.result.auto_approved}}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "overall-score",
+              "leftValue": "={{$json.campaign.result.quality_report.overall_score}}",
+              "rightValue": 82,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "quality-gate",
+      "name": "IF: Quality Gate Passed",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        -300,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{($node['Webhook: Brief Received'].json.body?.fastapi_base_url || $node['Webhook: Brief Received'].json.fastapi_base_url || 'http://127.0.0.1:8000') + '/api/campaigns/' + $json.campaign.id + '/schedule'}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify({channels: ['instagram', 'threads', 'blog'], scheduled_at: $node['Webhook: Brief Received'].json.body?.scheduled_at || $node['Webhook: Brief Received'].json.scheduled_at || null})}}",
+        "options": {}
+      },
+      "id": "schedule-campaign",
+      "name": "FastAPI: Schedule Campaign",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -20,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{($node['Webhook: Brief Received'].json.body?.fastapi_base_url || $node['Webhook: Brief Received'].json.fastapi_base_url || 'http://127.0.0.1:8000') + '/api/campaigns/' + $json.id + '/publish-payload'}}",
+        "options": {}
+      },
+      "id": "mock-publish",
+      "name": "FastAPI: Get Publish Payload",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        260,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{($node['Webhook: Brief Received'].json.body?.fastapi_base_url || $node['Webhook: Brief Received'].json.fastapi_base_url || 'http://127.0.0.1:8000') + '/api/campaigns/' + $json.campaign_id + '/publish-jobs/' + $json.job_id + '/complete'}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{JSON.stringify({status: 'published', provider: 'n8n-manual-upload-placeholder', external_ids: {instagram: 'replace-with-instagram-media-id', threads: 'replace-with-threads-post-id', blog: 'replace-with-blog-post-id'}})}}",
+        "options": {}
+      },
+      "id": "complete-job",
+      "name": "FastAPI: Complete Publish Job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({status: 'published_by_n8n_placeholder', campaign_id: $json.id, publish_jobs: $json.publish_jobs, note: 'Instagram/Threads/Blog 업로드 노드를 complete 전 단계에 연결하세요.'})}}",
+        "options": {}
+      },
+      "id": "success-response",
+      "name": "Respond: Published",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        820,
+        -120
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{JSON.stringify({status: 'needs_review', campaign_id: $json.campaign.id, overall_score: $json.campaign.result.quality_report.overall_score, suggestions: $json.campaign.result.quality_report.improvement_suggestions, result_url: ($node['Webhook: Brief Received'].json.body?.fastapi_base_url || $node['Webhook: Brief Received'].json.fastapi_base_url || 'http://127.0.0.1:8000') + '/campaigns/' + $json.campaign.id})}}",
+        "options": {}
+      },
+      "id": "review-response",
+      "name": "Respond: Needs Review",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -20,
+        140
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: Brief Received": {
+      "main": [
+        [
+          {
+            "node": "FastAPI: Generate Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FastAPI: Generate Campaign": {
+      "main": [
+        [
+          {
+            "node": "IF: Quality Gate Passed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF: Quality Gate Passed": {
+      "main": [
+        [
+          {
+            "node": "FastAPI: Schedule Campaign",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond: Needs Review",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FastAPI: Schedule Campaign": {
+      "main": [
+        [
+          {
+            "node": "FastAPI: Get Publish Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FastAPI: Get Publish Payload": {
+      "main": [
+        [
+          {
+            "node": "FastAPI: Complete Publish Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "FastAPI: Complete Publish Job": {
+      "main": [
+        [
+          {
+            "node": "Respond: Published",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "versionId": "local-template",
+  "triggerCount": 1,
+  "tags": [
+    {
+      "name": "ad-copy-studio"
+    }
+  ]
+}

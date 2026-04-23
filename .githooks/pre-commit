@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+staged_files="$(git diff --cached --name-only --diff-filter=ACM)"
+
+if [[ -z "${staged_files}" ]]; then
+  exit 0
+fi
+
+blocked_path_regex='(^|/)\.env$|(^|/)\.env\.(?!example$).+|\.pem$|\.key$|\.crt$|\.p12$|\.pfx$|(^|/)id_rsa(\.pub)?$'
+secret_content_regex='sk-[A-Za-z0-9_-]{20,}|AIza[0-9A-Za-z_-]{20,}|BEGIN (RSA|OPENSSH|EC|DSA|PGP) PRIVATE KEY|Bearer [A-Za-z0-9._-]{20,}'
+
+while IFS= read -r file; do
+  [[ -z "${file}" ]] && continue
+
+  if [[ "${file}" =~ ${blocked_path_regex} ]]; then
+    echo "Blocked commit: sensitive file path detected -> ${file}" >&2
+    exit 1
+  fi
+
+  if git diff --cached -- "${file}" | grep -E "${secret_content_regex}" >/dev/null 2>&1; then
+    echo "Blocked commit: possible secret detected in staged diff -> ${file}" >&2
+    exit 1
+  fi
+done <<< "${staged_files}"
+
+exit 0

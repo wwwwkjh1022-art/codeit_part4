@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}광고 문구 생성{% endblock %}
+{% block content %}
+<section class="panel">
+  <div class="panel-header">
+    <div>
+      <p class="section-label">STEP 1</p>
+      <h2>브리프 입력</h2>
+    </div>
+    <p class="section-copy">실제 마케터 브리프처럼 핵심 정보만 적어도 바로 문구를 만들 수 있습니다.</p>
+  </div>
+  {% if warning %}
+  <div class="warning">{{ warning }}</div>
+  {% endif %}
+  {% if errors %}
+  <div class="error-list">
+    {% for error in errors %}
+    <p>{{ error }}</p>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <form action="/generate" method="post" enctype="multipart/form-data" class="brief-form">
+    <label>
+      업종
+      <input type="text" name="business_category" value="{{ form.business_category }}" placeholder="예: 카페, 네일샵, 꽃집" required />
+    </label>
+    <label>
+      상호명
+      <input type="text" name="business_name" value="{{ form.business_name }}" placeholder="예: 오늘의카페" required />
+    </label>
+    <label>
+      상품/서비스명
+      <input type="text" name="product_name" value="{{ form.product_name }}" placeholder="예: 딸기 라떼, 봄 이벤트 패키지" required />
+    </label>
+    <label class="full">
+      상품/서비스 설명 <small>선택 입력</small>
+      <textarea name="product_description" rows="4" placeholder="비워두면 상품/서비스명과 업종을 바탕으로 자동 설명을 만듭니다.">{{ form.product_description }}</textarea>
+    </label>
+    <label class="full">
+      프로모션 상세
+      <input type="text" name="offer_details" value="{{ form.offer_details }}" placeholder="예: 첫 방문 10% 할인, 시즌 한정, 예약 고객 증정" />
+    </label>
+    <label>
+      타깃 고객
+      <input type="text" name="target_customer" value="{{ form.target_customer }}" placeholder="예: 20대 직장인, 동네 주민" required />
+    </label>
+    <label>
+      홍보 목적
+      <select name="promotion_goal">
+        {% for option in goal_options %}
+        <option value="{{ option }}" {% if form.promotion_goal == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      톤
+      <select name="tone">
+        {% for option in tone_options %}
+        <option value="{{ option }}" {% if form.tone == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <input type="hidden" name="platform" value="Instagram, Threads, Blog" />
+    <label>
+      캠페인 유형
+      <select name="campaign_type">
+        {% for option in campaign_type_options %}
+        <option value="{{ option }}" {% if form.campaign_type == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      최종 행동
+      <select name="desired_action">
+        {% for option in desired_action_options %}
+        <option value="{{ option }}" {% if form.desired_action == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      비주얼 스타일
+      <select name="visual_style">
+        {% for option in visual_style_options %}
+        <option value="{{ option }}" {% if form.visual_style == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      CTA 목표
+      <select name="cta_focus">
+        {% for option in cta_focus_options %}
+        <option value="{{ option }}" {% if form.cta_focus == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>
+      게시 타이밍
+      <select name="post_timing_preference">
+        {% for option in post_timing_options %}
+        <option value="{{ option }}" {% if form.post_timing_preference == option %}selected{% endif %}>{{ option }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="full">
+      강조 키워드
+      <input type="text" name="keywords" value="{{ form.keywords }}" placeholder="예: 수제 디저트, 예약 가능, 당일 제작" />
+    </label>
+    <label class="full">
+      참고 이미지
+      <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp" />
+    </label>
+    <div class="submit-row">
+      <button type="submit" id="generate-button">채널별 패키지 생성하기</button>
+      <p>Instagram, Threads, 포스터용 문구와 품질 점수, 예약 게시 준비 정보를 함께 생성합니다.</p>
+    </div>
+  </form>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  const form = document.querySelector(".brief-form");
+  const button = document.getElementById("generate-button");
+
+  form.addEventListener("submit", () => {
+    button.disabled = true;
+    button.textContent = "생성 중...";
+  });
+</script>
+{% endblock %}

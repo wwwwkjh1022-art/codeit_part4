@@ -1,0 +1,12 @@
+fastapi
+google-genai
+httpx
+jinja2
+openai
+pillow
+pydantic-settings
+pytest
+pytest-asyncio
+python-dotenv
+python-multipart
+uvicorn
