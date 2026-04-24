@@ -2,6 +2,7 @@
 .env
 .env.*
 !.env.example
+.sd35-wrapper.log
 .codex
 __pycache__/
 .pytest_cache/

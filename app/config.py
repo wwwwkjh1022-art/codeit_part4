@@ -50,6 +50,7 @@ class Settings(BaseSettings):
     sd35_height: int = 1024
     sd35_steps: int = 28
     sd35_guidance_scale: float = 3.5
+    sd35_request_timeout_seconds: int = 1800
     sd35_fallback_to_local: bool = True
     allow_paid_image_generation: bool = False
     max_upload_size_mb: int = 10

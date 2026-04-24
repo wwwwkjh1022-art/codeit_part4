@@ -1,5 +1,6 @@
 import base64
 from io import BytesIO
+from urllib.parse import urlparse
 from uuid import uuid4
 
 import httpx
@@ -268,8 +269,7 @@ class BackgroundGenerator:
         if not self.settings.sd35_endpoint_url:
             raise RuntimeError("SD35_ENDPOINT_URL이 설정되어 있지 않습니다.")
 
-        payload = {
-            "model": self.settings.sd35_model,
+        payload: dict[str, object] = {
             "prompt": prompt,
             "negative_prompt": (
                 "readable text, logo, watermark, fake interface, distorted typography, "
@@ -281,28 +281,73 @@ class BackgroundGenerator:
             "guidance_scale": self.settings.sd35_guidance_scale,
             "response_format": "b64_json",
         }
+        request_model = self._resolve_sd35_request_model()
+        if request_model:
+            payload["model"] = request_model
         headers = {"Accept": "application/json, image/png, image/jpeg"}
         if self.settings.sd35_api_key:
             headers["Authorization"] = f"Bearer {self.settings.sd35_api_key}"
 
-        async with httpx.AsyncClient(timeout=180) as client:
-            response = await client.post(
-                self.settings.sd35_endpoint_url,
-                json=payload,
-                headers=headers,
-            )
-            response.raise_for_status()
+        async with httpx.AsyncClient(timeout=self.settings.sd35_request_timeout_seconds) as client:
+            try:
+                response = await client.post(
+                    self.settings.sd35_endpoint_url,
+                    json=payload,
+                    headers=headers,
+                )
+                response.raise_for_status()
 
-            content_type = response.headers.get("content-type", "")
-            if content_type.startswith("image/"):
-                image_bytes = response.content
-            else:
-                image_bytes = await self._extract_sd35_image_bytes(response.json(), client)
+                content_type = response.headers.get("content-type", "")
+                if content_type.startswith("image/"):
+                    image_bytes = response.content
+                else:
+                    image_bytes = await self._extract_sd35_image_bytes(response.json(), client)
+            except httpx.HTTPError:
+                if not self._is_local_sd35_endpoint():
+                    raise
+                image_bytes = self._generate_with_embedded_sd35_wrapper(payload)
 
         image = Image.open(BytesIO(image_bytes)).convert("RGB")
         output_path = self.settings.background_dir / f"background-{uuid4().hex}.png"
         image.save(output_path)
         return f"/static/generated/backgrounds/{output_path.name}"
+
+    def _resolve_sd35_request_model(self) -> str | None:
+        model = (self.settings.sd35_model or "").strip()
+        if not model:
+            return None
+        if self._is_local_sd35_endpoint() and "tensorrt" in model.lower():
+            return None
+        return model
+
+    def _is_local_sd35_endpoint(self) -> bool:
+        if not self.settings.sd35_endpoint_url:
+            return False
+        parsed = urlparse(self.settings.sd35_endpoint_url)
+        return parsed.hostname in {"127.0.0.1", "localhost", "0.0.0.0"}
+
+    def _generate_with_embedded_sd35_wrapper(self, payload: dict[str, object]) -> bytes:
+        try:
+            from scripts.sd35_wrapper import SD35GenerateRequest, generate_image
+        except ImportError as exc:
+            raise RuntimeError(
+                "로컬 SD3.5 wrapper를 불러오지 못했습니다. scripts/sd35_wrapper.py를 확인하세요."
+            ) from exc
+
+        response_payload = generate_image(SD35GenerateRequest(**payload))
+        image_base64 = None
+        data = response_payload.get("data")
+        if isinstance(data, list) and data:
+            first = data[0]
+            if isinstance(first, dict):
+                image_base64 = first.get("b64_json") or first.get("base64")
+
+        if not image_base64:
+            raise RuntimeError(
+                "내장 SD3.5 wrapper 응답에서 이미지 데이터를 찾지 못했습니다."
+            )
+
+        return base64.b64decode(image_base64)
 
     async def _extract_sd35_image_bytes(
         self,

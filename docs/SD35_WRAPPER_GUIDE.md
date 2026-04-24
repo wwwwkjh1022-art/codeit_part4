@@ -70,6 +70,13 @@ source .venv/bin/activate
 pip install -U diffusers transformers accelerate safetensors sentencepiece protobuf
 ```
 
+또는 이 저장소에 추가한 전용 requirements 파일로 한 번에 설치할 수 있습니다.
+
+```bash
+source .venv/bin/activate
+pip install -r requirements-sd35.txt
+```
+
 Hugging Face 모델 접근이 필요한 경우 로그인합니다.
 
 ```bash
@@ -81,11 +88,24 @@ huggingface-cli login
 ```bash
 source .venv/bin/activate
 SD35_WRAPPER_BACKEND=diffusers \
-SD35_MODEL_ID=stabilityai/stable-diffusion-3.5-large \
-SD35_TORCH_DTYPE=bfloat16 \
+SD35_DIFFUSERS_MODEL_ID=stabilityai/sdxl-turbo \
+SD35_TORCH_DTYPE=float16 \
 SD35_DEVICE=cuda \
+SD35_ENABLE_CPU_OFFLOAD=true \
 python -m scripts.sd35_wrapper
 ```
+
+이 저장소에서는 아래 실행 스크립트로 같은 설정을 바로 사용할 수 있습니다.
+
+```bash
+./scripts/run_sd35_wrapper_local.sh
+```
+
+참고:
+
+- Stable Diffusion 3.5 계열은 Hugging Face gated repo 인증이 필요할 수 있습니다.
+- 현재 실행 스크립트 기본값은 인증 없이 바로 돌려볼 수 있는 `stabilityai/sdxl-turbo`입니다.
+- 추후 HF 접근 권한이 준비되면 `SD35_DIFFUSERS_MODEL_ID=stabilityai/stable-diffusion-3.5-medium` 또는 `...-large`로 바꿔 사용할 수 있습니다.
 
 GPU 메모리가 부족하면 먼저 아래 선택지를 고려하세요.
 
@@ -132,4 +152,3 @@ GPU 메모리가 부족하면 먼저 아래 선택지를 고려하세요.
 - Stable Diffusion 3.5 Large model card: https://huggingface.co/stabilityai/stable-diffusion-3.5-large
 - Diffusers SD3 pipeline docs: https://huggingface.co/docs/diffusers/en/api/pipelines/stable_diffusion/stable_diffusion_3
 - PyTorch install selector: https://pytorch.org/get-started/locally/
-

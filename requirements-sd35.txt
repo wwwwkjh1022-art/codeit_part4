@@ -1,0 +1,15 @@
+--index-url https://download.pytorch.org/whl/cu128
+
+torch
+torchvision
+torchaudio
+
+--extra-index-url https://pypi.org/simple
+
+diffusers
+transformers
+accelerate
+safetensors
+sentencepiece
+protobuf
+huggingface_hub
