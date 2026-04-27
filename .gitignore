@@ -13,6 +13,7 @@ __pycache__/
 *.crt
 *.p12
 *.pfx
+*:Zone.Identifier
 id_rsa
 id_rsa.pub
 app/static/generated/*

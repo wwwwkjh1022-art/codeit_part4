@@ -5,6 +5,7 @@
 ## 제출 바로가기
 
 - Github Repository: [codeit_part4](https://github.com/wwwwkjh1022-art/codeit_part4)
+- 발표 PDF: [고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
 - 보고서 PDF: [보고서.pdf](제출용_패키지/보고서.pdf)
 - 협업 일지 PDF: [업무일지_정리.pdf](제출용_패키지/업무일지_정리.pdf)
 
@@ -255,7 +256,9 @@ ALLOW_PAID_IMAGE_GENERATION=false
 
 ## 포트폴리오 문서
 
-- 발표용 슬라이드 원고: `docs/PRESENTATION_DECK.md`
+- 발표 PDF: [docs/고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
+- 발표용 슬라이드 HTML: [docs/PRESENTATION_SLIDES.html](docs/PRESENTATION_SLIDES.html)
+- 발표용 슬라이드 원고: [docs/PRESENTATION_DECK.md](docs/PRESENTATION_DECK.md)
 - 개발 타임라인, 기술스택, 실험 과정, 막힌 부분과 해결 과정은 `docs/PORTFOLIO_TIMELINE.md`에 정리되어 있습니다.
 - Instagram/Blog API 연동 설계는 `docs/API_INTEGRATION_GUIDE.md`에 정리되어 있습니다.
 - n8n 자동화 설계와 import용 workflow는 `docs/N8N_AUTOMATION_GUIDE.md`, `automations/n8n_campaign_automation.json`에 정리되어 있습니다.
@@ -277,6 +280,7 @@ ALLOW_PAID_IMAGE_GENERATION=false
 ## 제출 자료
 
 - 제출용 패키지 안내: [제출용_패키지/README.md](제출용_패키지/README.md)
+- 발표 PDF: [docs/고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
 - 보고서 원고: [제출용_패키지/보고서_원고.md](제출용_패키지/보고서_원고.md)
 - 보고서 PDF: [제출용_패키지/보고서.pdf](제출용_패키지/보고서.pdf)
 - 협업 일지 정리본: [제출용_패키지/업무일지_정리.md](제출용_패키지/업무일지_정리.md)
