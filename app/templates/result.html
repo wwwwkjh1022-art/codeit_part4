@@ -2,6 +2,219 @@
 {% block title %}생성 결과{% endblock %}
 {% block content %}
 <section class="panel result-grid">
+  <section class="upload-preview-panel">
+    <div class="workbench-topbar">
+      <div>
+        <p class="section-label">STEP 3</p>
+        <h3>이미지 생성 먼저 진행하기</h3>
+        <p class="mini-note preview-note">
+          브리프는 끝났습니다. 이 단계에서 참고 이미지를 넣거나 프롬프트를 바꿔 배너를 다시 만들고, 그 다음에 콘텐츠 편집으로 넘어가면 됩니다.
+        </p>
+      </div>
+      <span class="status-pill dark-pill">이미지 우선 워크플로</span>
+    </div>
+
+    <div
+      class="workbench-tabs"
+      id="workbench-tabs"
+      data-active-workbench-tab="{{ active_workbench_tab if active_workbench_tab else 'image' }}"
+    >
+      <div class="workbench-tablist" role="tablist" aria-label="결과 작업 탭">
+        <button type="button" class="workbench-tab" data-tab-target="image" role="tab">이미지 생성</button>
+        <button type="button" class="workbench-tab" data-tab-target="content" role="tab">콘텐츠 편집</button>
+      </div>
+
+      <div class="workbench-pane" data-tab-pane="image">
+        <div class="image-lab-grid">
+          <article class="image-lab-card image-lab-preview">
+            <div class="variant-top">
+              <div>
+                <p class="section-label">IMAGE LAB</p>
+                <h3>현재 배너/배경 미리보기</h3>
+              </div>
+              <span class="status-pill dark-pill">
+                {{ result.background_asset.provider if result.background_asset else "prompt_only" }}
+              </span>
+            </div>
+            <img src="{{ result.banner_preview_path }}" alt="현재 생성된 배너 미리보기" />
+            {% if uploaded_image_path %}
+            <p class="mini-note">현재 참고 이미지: {{ uploaded_image_path }}</p>
+            {% endif %}
+            {% if result.background_asset and result.background_asset.image_path %}
+            <p class="mini-note">현재 배경 이미지: {{ result.background_asset.image_path }}</p>
+            {% else %}
+            <p class="mini-note">아직 생성된 배경 이미지가 없으면 이번 탭에서 참고 이미지와 프롬프트를 함께 조정할 수 있습니다.</p>
+            {% endif %}
+          </article>
+
+          <article class="image-lab-card image-lab-form-card">
+            <div class="studio-heading">
+              <div>
+                <p class="section-label">REGENERATE IMAGE</p>
+                <h3>참고 이미지 넣고 다시 생성하기</h3>
+              </div>
+              <span class="status-dot">Prompt</span>
+            </div>
+            <form
+              action="/campaigns/{{ campaign.id }}/image-regenerate"
+              method="post"
+              enctype="multipart/form-data"
+              class="image-regenerate-form"
+              id="image-regenerate-form"
+            >
+              <label>
+                <span>참고 이미지 업로드</span>
+                <input
+                  id="image-reference-input"
+                  type="file"
+                  name="image"
+                  accept=".png,.jpg,.jpeg,.webp"
+                />
+                <small class="image-input-hint" id="image-input-hint">
+                  브리프에서는 이미지를 받지 않고, 여기서만 업로드해서 배너 재생성에 반영합니다.
+                </small>
+              </label>
+              <label>
+                <span>이미지 생성 프롬프트</span>
+                <textarea
+                  name="image_prompt"
+                  rows="13"
+                  placeholder="원하는 비주얼 스타일, 구도, 분위기, 제외 요소를 자유롭게 수정해 주세요."
+                >{{ result.background_asset.prompt if result.background_asset else result.image_direction }}</textarea>
+              </label>
+              <div class="image-tip-list">
+                <p><strong>수정 팁</strong></p>
+                <p>예: warm editorial cafe table, premium dessert hero shot, clean negative space on left</p>
+                <p>예: no text, no watermark, no logo, no people, realistic lighting</p>
+                <p>생성 버튼을 누르면 경과 시간이 바로 표시됩니다.</p>
+              </div>
+              <button type="submit" class="secondary-btn" id="image-regenerate-button">이 이미지/프롬프트로 다시 생성</button>
+            </form>
+          </article>
+        </div>
+      </div>
+
+      <div class="workbench-pane" data-tab-pane="content">
+        <div class="channel-preview-board">
+          <article class="live-preview-card" aria-label="Instagram 피드 미리보기">
+            <div class="device-frame">
+              <div class="device-status">
+                <span>{{ form.business_name }}_official</span>
+                <small>Instagram · Sponsored</small>
+              </div>
+              <div class="device-media">
+                <img src="{{ result.banner_preview_path }}" alt="Instagram 업로드 이미지 예상 초안" />
+              </div>
+              <div class="device-actions" aria-label="Instagram 반응 버튼 미리보기">
+                <span>좋아요</span>
+                <span>댓글</span>
+                <span>공유</span>
+                <span>저장</span>
+              </div>
+              <p class="like-count">좋아요 8,241개</p>
+              <p class="live-caption">
+                <strong>{{ form.business_name }}</strong>
+                <span id="live-instagram-caption">{{ result.channel_packages.instagram.caption }}</span>
+              </p>
+              <div id="live-hashtag-preview" class="live-hashtag-preview">
+                {% for hashtag in result.channel_packages.instagram.hashtags %}
+                <span>{{ hashtag }}</span>
+                {% endfor %}
+              </div>
+            </div>
+          </article>
+
+          <article class="live-preview-card" aria-label="Threads 게시글 미리보기">
+            <div class="device-frame threads-device">
+              <div class="device-status">
+                <span>{{ form.business_name }}</span>
+                <small>Threads · 초안</small>
+              </div>
+              <div class="thread-live-body">
+                <strong id="live-threads-hook">{{ result.channel_packages.threads.short_hook }}</strong>
+                <p id="live-threads-text">{{ result.channel_packages.threads.thread_text }}</p>
+                <small id="live-threads-reply">{{ result.channel_packages.threads.reply_prompt }}</small>
+              </div>
+              <div class="thread-mini-image">
+                <img src="{{ result.banner_preview_path }}" alt="Threads 첨부 이미지 예상 초안" />
+              </div>
+              <div class="thread-actions">
+                <span>답글</span><span>리포스트</span><span>공유</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="live-preview-card" aria-label="Blog 게시글 미리보기">
+            <div class="device-frame blog-device">
+              <div class="blog-browser-bar">
+                <span></span><span></span><span></span>
+                <strong>Blog Preview</strong>
+              </div>
+              <div class="device-media blog-device-media">
+                <img src="{{ result.banner_preview_path }}" alt="블로그 대표 이미지 예상 초안" />
+              </div>
+              <div class="blog-live-body">
+                <small>검색/블로그용 초안</small>
+                <h4 id="live-blog-title">{{ result.channel_packages.blog.title }}</h4>
+                <p id="live-blog-intro">{{ result.channel_packages.blog.intro }}</p>
+                <strong id="live-blog-cta">{{ result.channel_packages.blog.cta }}</strong>
+              </div>
+            </div>
+          </article>
+        </div>
+
+        <div class="browser-workbench editor-workbench">
+          <article class="edit-studio-card" aria-label="게시글 수정 패널">
+            <div class="studio-heading">
+              <div>
+                <p class="section-label">EDIT BEFORE POST</p>
+                <h3>3채널 글 수정하기</h3>
+              </div>
+              <span class="status-dot">Live</span>
+            </div>
+            <label>
+              <span>Instagram 캡션</span>
+              <textarea id="live-caption-editor" rows="8">{{ result.channel_packages.instagram.caption }}</textarea>
+            </label>
+            <label>
+              <span>해시태그</span>
+              <textarea id="live-hashtags-editor" rows="4">{{ result.channel_packages.instagram.hashtags | join(" ") }}</textarea>
+            </label>
+            <label>
+              <span>Threads 본문</span>
+              <textarea id="live-threads-editor" rows="7">{{ result.channel_packages.threads.thread_text }}</textarea>
+            </label>
+            <label>
+              <span>Threads 댓글 유도</span>
+              <textarea id="live-threads-reply-editor" rows="3">{{ result.channel_packages.threads.reply_prompt }}</textarea>
+            </label>
+            <label>
+              <span>Blog 제목</span>
+              <input id="live-blog-title-editor" type="text" value="{{ result.channel_packages.blog.title }}" />
+            </label>
+            <label>
+              <span>Blog 도입문</span>
+              <textarea id="live-blog-intro-editor" rows="5">{{ result.channel_packages.blog.intro }}</textarea>
+            </label>
+            <label>
+              <span>Blog CTA</span>
+              <input id="live-blog-cta-editor" type="text" value="{{ result.channel_packages.blog.cta }}" />
+            </label>
+            <div class="studio-tip">
+              <strong>검수 팁</strong>
+              <p>Instagram은 첫 문장 후킹, Threads는 대화감, Blog는 검색형 제목과 충분한 정보량을 우선 확인해 주세요.</p>
+            </div>
+            <button type="button" class="secondary-btn disabled-action">3채널 업로드 준비</button>
+            <div class="automation-status">
+              <span>n8n 업로드 큐 연결 대기</span>
+              <div><i style="width: 42%"></i></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <div class="result-main">
     <div class="panel-header">
       <div>
@@ -36,70 +249,17 @@
       <a class="ghost-link" href="/campaigns">이력 보기</a>
     </div>
     {% endif %}
-    <div class="strategy-grid">
-      <article class="insight-card">
-        <p class="support-label">전략 메모</p>
-        <strong>{{ result.strategy_note }}</strong>
-      </article>
-      <article class="insight-card">
-        <p class="support-label">권장 비주얼 방향</p>
-        <strong>{{ result.image_direction }}</strong>
-      </article>
-    </div>
-    <div class="quality-panel">
-      <div class="score-ring" style="--score: {{ result.quality_report.overall_score }}">
-        <span>{{ result.quality_report.overall_score }}</span>
-        <small>전체 점수</small>
-      </div>
-      <div class="score-list">
-        <p><strong>후킹</strong><span>{{ result.quality_report.hook_score }}</span></p>
-        <p><strong>명확성</strong><span>{{ result.quality_report.clarity_score }}</span></p>
-        <p><strong>CTA</strong><span>{{ result.quality_report.cta_score }}</span></p>
-        <p><strong>채널 적합도</strong><span>{{ result.quality_report.channel_fit_score }}</span></p>
-      </div>
-      <div class="suggestions">
-        <p class="support-label">수정 제안</p>
-        {% for suggestion in result.quality_report.improvement_suggestions %}
-        <p>{{ suggestion }}</p>
-        {% endfor %}
-      </div>
-    </div>
-    <div class="channel-quality-panel">
-      <div>
-        <p class="support-label">자동 생성 판정</p>
-        <h3>{% if result.auto_approved %}품질 기준 통과{% else %}검수 필요{% endif %}</h3>
-        <p class="mini-note">생성 시도 {{ result.generation_attempts }}회</p>
-      </div>
-      <div class="score-list">
-        <p><strong>Instagram</strong><span>{{ result.channel_quality.instagram_score }}</span></p>
-        <p><strong>Threads</strong><span>{{ result.channel_quality.threads_score }}</span></p>
-        <p><strong>Blog</strong><span>{{ result.channel_quality.blog_score }}</span></p>
-      </div>
-      <div class="suggestions">
-        <p class="support-label">채널별 재생성 힌트</p>
-        {% for suggestion in result.channel_quality.regeneration_suggestions %}
-        <p>{{ suggestion }}</p>
-        {% endfor %}
-      </div>
-    </div>
-    <details class="poster-details">
-      <summary>보조 포스터 문구 보기</summary>
-      <p><strong>{{ result.channel_packages.poster.headline }}</strong></p>
-      <p>{{ result.channel_packages.poster.subcopy }} {{ result.channel_packages.poster.cta }}</p>
-      <p class="mini-note">{{ result.channel_packages.poster.visual_direction }}</p>
-    </details>
-    <div class="checklist-card">
-      <p class="support-label">자동예약 전 체크리스트</p>
-      {% for item in result.pre_publish_checklist %}
-      <p>{{ item }}</p>
-      {% endfor %}
-    </div>
     {% if campaign and campaign.publish_jobs %}
     <div class="checklist-card">
       <p class="support-label">예약/게시 작업</p>
       {% for job in campaign.publish_jobs %}
       <p>
-        <strong>{{ job.status }}</strong>
+        <strong>
+          {% if job.status == "queued" %}예약 대기
+          {% elif job.status == "published" %}게시 완료
+          {% elif job.status == "failed" %}게시 실패
+          {% else %}{{ job.status }}{% endif %}
+        </strong>
         {{ job.channels | join(", ") }} / {{ job.scheduled_at.strftime("%Y-%m-%d %H:%M") }}
         / {{ job.provider }}
         {% if job.sequence_total > 1 %}/ {{ job.recurrence }} {{ job.sequence_index }}/{{ job.sequence_total }}{% endif %}
@@ -108,171 +268,7 @@
       {% endfor %}
     </div>
     {% endif %}
-    <div class="variants">
-      {% for variant in result.variants %}
-      <article class="variant-card">
-        <div class="variant-top">
-          <p>{{ variant.label }}</p>
-          <button type="button" class="copy-btn" data-copy-target="copy-{{ loop.index }}">복사</button>
-        </div>
-        <h3>{{ variant.headline }}</h3>
-        <p id="copy-{{ loop.index }}">{{ variant.body_copy }}</p>
-      </article>
-      {% endfor %}
-    </div>
-
-    <div class="support-box">
-      <div>
-        <p class="support-label">CTA</p>
-        <strong>{{ result.cta }}</strong>
-      </div>
-      <div>
-        <p class="support-label">추천 해시태그</p>
-        <div class="hashtags">
-          {% for hashtag in result.hashtags %}
-          <span>{{ hashtag }}</span>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
-    <article class="caption-card">
-      <div class="variant-top">
-        <p class="support-label">호환용 통합 캡션</p>
-        <button type="button" class="copy-btn" data-copy-target="full-caption">캡션 복사</button>
-      </div>
-      <p id="full-caption">{{ result.caption }}</p>
-    </article>
   </div>
-
-  <section class="upload-preview-panel">
-    <div class="workbench-topbar">
-      <div>
-        <p class="section-label">LIVE PUBLISH WORKBENCH</p>
-        <h3>업로드 전 피드 미리보기</h3>
-        <p class="mini-note preview-note">
-          오른쪽에서 문구를 다듬으면 왼쪽 Instagram 피드 초안에 바로 반영됩니다. 실제 게시 전 최종 검수용 화면입니다.
-        </p>
-      </div>
-      <span class="status-pill dark-pill">게시 전 편집 모드</span>
-    </div>
-
-    <div class="channel-preview-board">
-      <article class="live-preview-card" aria-label="Instagram 피드 미리보기">
-        <div class="device-frame">
-          <div class="device-status">
-            <span>{{ form.business_name }}_official</span>
-            <small>Instagram · Sponsored</small>
-          </div>
-          <div class="device-media">
-            <img src="{{ result.banner_preview_path }}" alt="Instagram 업로드 이미지 예상 초안" />
-          </div>
-          <div class="device-actions" aria-label="Instagram 반응 버튼 미리보기">
-            <span>좋아요</span>
-            <span>댓글</span>
-            <span>공유</span>
-            <span>저장</span>
-          </div>
-          <p class="like-count">좋아요 8,241개</p>
-          <p class="live-caption">
-            <strong>{{ form.business_name }}</strong>
-            <span id="live-instagram-caption">{{ result.channel_packages.instagram.caption }}</span>
-          </p>
-          <div id="live-hashtag-preview" class="live-hashtag-preview">
-            {% for hashtag in result.channel_packages.instagram.hashtags %}
-            <span>{{ hashtag }}</span>
-            {% endfor %}
-          </div>
-        </div>
-      </article>
-
-      <article class="live-preview-card" aria-label="Threads 게시글 미리보기">
-        <div class="device-frame threads-device">
-          <div class="device-status">
-            <span>{{ form.business_name }}</span>
-            <small>Threads · 초안</small>
-          </div>
-          <div class="thread-live-body">
-            <strong id="live-threads-hook">{{ result.channel_packages.threads.short_hook }}</strong>
-            <p id="live-threads-text">{{ result.channel_packages.threads.thread_text }}</p>
-            <small id="live-threads-reply">{{ result.channel_packages.threads.reply_prompt }}</small>
-          </div>
-          <div class="thread-mini-image">
-            <img src="{{ result.banner_preview_path }}" alt="Threads 첨부 이미지 예상 초안" />
-          </div>
-          <div class="thread-actions">
-            <span>답글</span><span>리포스트</span><span>공유</span>
-          </div>
-        </div>
-      </article>
-
-      <article class="live-preview-card" aria-label="Blog 게시글 미리보기">
-        <div class="device-frame blog-device">
-          <div class="blog-browser-bar">
-            <span></span><span></span><span></span>
-            <strong>Blog Preview</strong>
-          </div>
-          <div class="device-media blog-device-media">
-            <img src="{{ result.banner_preview_path }}" alt="블로그 대표 이미지 예상 초안" />
-          </div>
-          <div class="blog-live-body">
-            <small>검색/블로그용 초안</small>
-            <h4 id="live-blog-title">{{ result.channel_packages.blog.title }}</h4>
-            <p id="live-blog-intro">{{ result.channel_packages.blog.intro }}</p>
-            <strong id="live-blog-cta">{{ result.channel_packages.blog.cta }}</strong>
-          </div>
-        </div>
-      </article>
-    </div>
-
-    <div class="browser-workbench editor-workbench">
-      <article class="edit-studio-card" aria-label="게시글 수정 패널">
-        <div class="studio-heading">
-          <div>
-            <p class="section-label">EDIT BEFORE POST</p>
-            <h3>3채널 글 수정하기</h3>
-          </div>
-          <span class="status-dot">Live</span>
-        </div>
-        <label>
-          <span>Instagram 캡션</span>
-          <textarea id="live-caption-editor" rows="8">{{ result.channel_packages.instagram.caption }}</textarea>
-        </label>
-        <label>
-          <span>해시태그</span>
-          <textarea id="live-hashtags-editor" rows="4">{{ result.channel_packages.instagram.hashtags | join(" ") }}</textarea>
-        </label>
-        <label>
-          <span>Threads 본문</span>
-          <textarea id="live-threads-editor" rows="7">{{ result.channel_packages.threads.thread_text }}</textarea>
-        </label>
-        <label>
-          <span>Threads 댓글 유도</span>
-          <textarea id="live-threads-reply-editor" rows="3">{{ result.channel_packages.threads.reply_prompt }}</textarea>
-        </label>
-        <label>
-          <span>Blog 제목</span>
-          <input id="live-blog-title-editor" type="text" value="{{ result.channel_packages.blog.title }}" />
-        </label>
-        <label>
-          <span>Blog 도입문</span>
-          <textarea id="live-blog-intro-editor" rows="5">{{ result.channel_packages.blog.intro }}</textarea>
-        </label>
-        <label>
-          <span>Blog CTA</span>
-          <input id="live-blog-cta-editor" type="text" value="{{ result.channel_packages.blog.cta }}" />
-        </label>
-        <div class="studio-tip">
-          <strong>검수 팁</strong>
-          <p>Instagram은 첫 문장 후킹, Threads는 대화감, Blog는 검색형 제목과 충분한 정보량을 우선 확인해 주세요.</p>
-        </div>
-        <button type="button" class="secondary-btn disabled-action">3채널 업로드 준비</button>
-        <div class="automation-status">
-          <span>n8n 업로드 큐 연결 대기</span>
-          <div><i style="width: 42%"></i></div>
-        </div>
-      </article>
-    </div>
-  </section>
 
   <aside class="result-side">
     <div class="banner-card">
@@ -283,26 +279,143 @@
     <div class="account-connect-card">
       <div class="variant-top">
         <div>
-          <p class="section-label">CHANNEL LOGIN</p>
-          <h3>게시 채널 연결</h3>
+          <p class="section-label">CHANNEL API SETUP</p>
+          <h3>채널 API 값 입력</h3>
         </div>
-        <span class="status-pill">준비 단계</span>
+        <span class="status-pill">
+          {% if channel_connections and channel_connections.instagram.is_configured and channel_connections.threads.is_configured and channel_connections.blog.is_configured %}
+          3채널 연결 완료
+          {% else %}
+          입력 대기
+          {% endif %}
+        </span>
       </div>
       <div class="provider-row">
         <div>
           <strong>Instagram</strong>
-          <small>Meta OAuth 필요</small>
+          <small>
+            {% if channel_connections and channel_connections.instagram.is_configured %}
+            연결 완료 · IG User ID {{ channel_connections.instagram.instagram_user_id }}
+            {% else %}
+            Access Token + Instagram User ID 입력
+            {% endif %}
+          </small>
         </div>
-        <button type="button" class="outline-btn disabled-action">로그인 준비</button>
+        <form action="/channels/connect/instagram" method="post" class="channel-api-form">
+          <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
+          <input
+            type="text"
+            name="instagram_user_id"
+            placeholder="Instagram User ID"
+            value="{{ channel_connections.instagram.instagram_user_id if channel_connections else '' }}"
+            required
+          />
+          <input
+            type="password"
+            name="access_token"
+            placeholder="Instagram Access Token"
+            required
+          />
+          <button type="submit" class="outline-btn">Instagram API 저장</button>
+        </form>
+      </div>
+      <div class="provider-row">
+        <div>
+          <strong>Threads</strong>
+          <small>
+            {% if channel_connections and channel_connections.threads.is_configured %}
+            연결 완료 · Threads User ID {{ channel_connections.threads.threads_user_id }}
+            {% else %}
+            Access Token + Threads User ID 입력
+            {% endif %}
+          </small>
+        </div>
+        <form action="/channels/connect/threads" method="post" class="channel-api-form">
+          <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
+          <input
+            type="text"
+            name="threads_user_id"
+            placeholder="Threads User ID"
+            value="{{ channel_connections.threads.threads_user_id if channel_connections else '' }}"
+            required
+          />
+          <input
+            type="password"
+            name="access_token"
+            placeholder="Threads Access Token"
+            required
+          />
+          <button type="submit" class="outline-btn">Threads API 저장</button>
+        </form>
       </div>
       <div class="provider-row">
         <div>
           <strong>Blog</strong>
-          <small>플랫폼별 API 연결 예정</small>
+          <small>
+            {% if channel_connections and channel_connections.blog.is_configured %}
+              {% if channel_connections.blog.platform == "naver_blog" %}
+            연결 완료 · naver_blog · {{ channel_connections.blog.blog_id }}
+              {% else %}
+            연결 완료 · wordpress · {{ channel_connections.blog.api_base_url }}
+              {% endif %}
+            {% else %}
+            Naver Blog 기준 블로그 ID + 네이버 로그인 정보 입력
+            {% endif %}
+          </small>
         </div>
-        <button type="button" class="outline-btn disabled-action">로그인 준비</button>
+        <form action="/channels/connect/blog" method="post" class="channel-api-form">
+          <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
+          <select name="platform" id="blog-platform-select">
+            <option value="naver_blog" {% if not channel_connections or channel_connections.blog.platform == "naver_blog" %}selected{% endif %}>Naver Blog (Playwright)</option>
+            <option value="wordpress" {% if channel_connections and channel_connections.blog.platform == "wordpress" %}selected{% endif %}>WordPress</option>
+          </select>
+          <div class="blog-platform-panel" data-blog-platform-panel="naver_blog">
+            <input
+              type="text"
+              name="blog_id"
+              id="naver-blog-id-input"
+              placeholder="Naver Blog ID"
+              value="{{ channel_connections.blog.blog_id if channel_connections and channel_connections.blog.platform == 'naver_blog' else '' }}"
+            />
+            <input
+              type="text"
+              name="category_id"
+              id="naver-category-id-input"
+              placeholder="Category ID (선택)"
+              value="{{ channel_connections.blog.category_id if channel_connections and channel_connections.blog.platform == 'naver_blog' else '' }}"
+            />
+            <button type="button" class="outline-btn" id="naver-blog-connect-button">네이버 로그인 창 열기</button>
+            <p class="mini-note" id="naver-blog-connect-status">
+              {% if channel_connections and channel_connections.blog.platform == "naver_blog" and channel_connections.blog.session_ready %}
+              연결된 브라우저 세션이 준비되어 있습니다. 필요하면 다시 로그인 창을 열어 세션을 갱신할 수 있습니다.
+              {% else %}
+              버튼을 누르면 Chromium 창이 열리고, 그 창에서 네이버 로그인 후 블로그 글쓰기 화면까지 들어가면 연결이 완료됩니다.
+              {% endif %}
+            </p>
+          </div>
+          <div class="blog-platform-panel" data-blog-platform-panel="wordpress">
+            <input
+              type="url"
+              name="api_base_url"
+              placeholder="https://example.com/wp-json/wp/v2"
+              value="{{ channel_connections.blog.api_base_url if channel_connections and channel_connections.blog.platform == 'wordpress' else '' }}"
+            />
+            <input
+              type="text"
+              name="wordpress_username"
+              placeholder="WordPress Username"
+              value="{{ channel_connections.blog.username if channel_connections and channel_connections.blog.platform == 'wordpress' else '' }}"
+            />
+            <input
+              type="password"
+              name="application_password"
+              placeholder="Application Password"
+            />
+            <button type="submit" class="outline-btn">Blog API 저장</button>
+          </div>
+        </form>
       </div>
-      <p class="mini-note">지금은 안전한 UI 프로토타입입니다. 실제 연결은 비밀번호 저장이 아니라 OAuth/API 토큰 방식으로 붙이는 게 맞습니다.</p>
+      <p class="mini-note">네이버 블로그는 Playwright로 브라우저 자동화 로그인 후 발행합니다. 현재 저장된 값은 로컬 개발용 파일에 보관됩니다.</p>
     </div>
     {% if result.background_asset %}
     <div class="background-prompt-card">
@@ -347,7 +460,8 @@
         <label>
           자동화 방식
           <select name="automation_provider">
-            <option value="n8n" selected>n8n 실제 업로드 큐</option>
+            <option value="direct_api" selected>직접 API 게시</option>
+            <option value="n8n">n8n 업로드 큐</option>
             <option value="mock">Mock 테스트 게시</option>
           </select>
         </label>
@@ -399,6 +513,52 @@
     </div>
   </aside>
 </section>
+
+<div class="generation-loader" id="image-generation-loader" aria-hidden="true">
+  <div class="generation-loader__panel" role="status" aria-live="polite">
+    <p class="section-label">IMAGE GENERATING</p>
+    <h3>이미지와 배너를 다시 만드는 중입니다</h3>
+    <p class="generation-loader__copy" id="image-loader-copy">
+      참고 이미지와 프롬프트를 읽고 새로운 배너 초안을 준비하고 있어요.
+    </p>
+
+    <div class="generation-loader__visual" aria-hidden="true">
+      <div class="loader-card loader-card--wide">
+        <span></span>
+        <strong>Reference Image</strong>
+        <small>Upload + prompt</small>
+      </div>
+      <div class="loader-card">
+        <span></span>
+        <strong>Background</strong>
+        <small>Style render</small>
+      </div>
+      <div class="loader-card">
+        <span></span>
+        <strong>Banner</strong>
+        <small>Text overlay</small>
+      </div>
+    </div>
+
+    <div class="generation-loader__stats">
+      <div class="loader-stat">
+        <small>경과 시간</small>
+        <strong id="image-loader-elapsed">00:00</strong>
+      </div>
+      <div class="loader-stat">
+        <small>현재 단계</small>
+        <strong id="image-loader-stage">참고 이미지 확인</strong>
+      </div>
+    </div>
+
+    <div class="generation-loader__progress" aria-hidden="true">
+      <i></i>
+    </div>
+    <p class="generation-loader__hint" id="image-loader-hint">
+      모델 상태와 업로드한 이미지에 따라 시간이 달라질 수 있습니다.
+    </p>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -414,6 +574,227 @@
       }, 1200);
     });
   });
+
+  const workbenchTabs = document.getElementById("workbench-tabs");
+  if (workbenchTabs) {
+    const tabButtons = Array.from(workbenchTabs.querySelectorAll(".workbench-tab"));
+    const panes = Array.from(workbenchTabs.querySelectorAll(".workbench-pane"));
+    const initialTab = workbenchTabs.dataset.activeWorkbenchTab || "image";
+
+    const activateTab = (tabName) => {
+      tabButtons.forEach((button) => {
+        const isActive = button.dataset.tabTarget === tabName;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+      });
+      panes.forEach((pane) => {
+        const isActive = pane.dataset.tabPane === tabName;
+        pane.classList.toggle("is-active", isActive);
+      });
+      workbenchTabs.dataset.activeWorkbenchTab = tabName;
+    };
+
+    tabButtons.forEach((button) => {
+      button.addEventListener("click", () => activateTab(button.dataset.tabTarget));
+    });
+
+    activateTab(initialTab);
+  }
+
+  const imageReferenceInput = document.getElementById("image-reference-input");
+  const imageInputHint = document.getElementById("image-input-hint");
+  if (imageReferenceInput && imageInputHint) {
+    imageReferenceInput.addEventListener("change", () => {
+      const fileName = imageReferenceInput.files && imageReferenceInput.files[0]
+        ? imageReferenceInput.files[0].name
+        : "";
+      imageInputHint.textContent = fileName
+        ? `선택된 이미지: ${fileName}`
+        : "브리프에서는 이미지를 받지 않고, 여기서만 업로드해서 배너 재생성에 반영합니다.";
+    });
+  }
+
+  const imageRegenerateForm = document.getElementById("image-regenerate-form");
+  const imageRegenerateButton = document.getElementById("image-regenerate-button");
+  const imageLoader = document.getElementById("image-generation-loader");
+  const imageLoaderElapsed = document.getElementById("image-loader-elapsed");
+  const imageLoaderStage = document.getElementById("image-loader-stage");
+  const imageLoaderCopy = document.getElementById("image-loader-copy");
+  const imageLoaderHint = document.getElementById("image-loader-hint");
+  const imagePhases = [
+    {
+      stage: "참고 이미지 확인",
+      copy: "업로드한 참고 이미지와 프롬프트를 읽고 방향을 정리하고 있어요.",
+      hint: "이미지를 올리지 않아도 프롬프트만으로 다시 생성할 수 있습니다.",
+    },
+    {
+      stage: "배경 이미지 생성",
+      copy: "새로운 배경 또는 참고 이미지 기반 구성을 만드는 중입니다.",
+      hint: "사용 중인 모델과 현재 서버 상태에 따라 이 단계가 가장 오래 걸릴 수 있습니다.",
+    },
+    {
+      stage: "배너 합성",
+      copy: "카피와 이미지를 합쳐 새 배너 미리보기를 만들고 있어요.",
+      hint: "완료되면 같은 페이지에서 결과가 바로 갱신됩니다.",
+    },
+  ];
+
+  let imageTimerId = null;
+  let imagePhaseId = null;
+
+  const formatElapsed = (totalSeconds) => {
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  };
+
+  const showImagePhase = (index) => {
+    const phase = imagePhases[index % imagePhases.length];
+    imageLoaderStage.textContent = phase.stage;
+    imageLoaderCopy.textContent = phase.copy;
+    imageLoaderHint.textContent = phase.hint;
+  };
+
+  if (imageRegenerateForm && imageRegenerateButton && imageLoader) {
+    imageRegenerateForm.addEventListener("submit", () => {
+      const startedAt = Date.now();
+      let phaseIndex = 0;
+
+      imageRegenerateButton.disabled = true;
+      imageRegenerateButton.textContent = "이미지 생성 중...";
+      document.body.classList.add("loading-active");
+      imageLoader.classList.add("is-visible");
+      imageLoader.setAttribute("aria-hidden", "false");
+      showImagePhase(phaseIndex);
+      imageLoaderElapsed.textContent = "00:00";
+
+      imageTimerId = window.setInterval(() => {
+        const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+        imageLoaderElapsed.textContent = formatElapsed(elapsedSeconds);
+      }, 1000);
+
+      imagePhaseId = window.setInterval(() => {
+        phaseIndex += 1;
+        showImagePhase(phaseIndex);
+      }, 2400);
+    });
+  }
+
+  window.addEventListener("pageshow", () => {
+    document.body.classList.remove("loading-active");
+    if (imageLoader) {
+      imageLoader.classList.remove("is-visible");
+      imageLoader.setAttribute("aria-hidden", "true");
+    }
+    if (imageRegenerateButton) {
+      imageRegenerateButton.disabled = false;
+      imageRegenerateButton.textContent = "이 이미지/프롬프트로 다시 생성";
+    }
+    if (imageTimerId) {
+      window.clearInterval(imageTimerId);
+      imageTimerId = null;
+    }
+    if (imagePhaseId) {
+      window.clearInterval(imagePhaseId);
+      imagePhaseId = null;
+    }
+  });
+
+  const blogPlatformSelect = document.getElementById("blog-platform-select");
+  const blogPlatformPanels = Array.from(document.querySelectorAll("[data-blog-platform-panel]"));
+  if (blogPlatformSelect && blogPlatformPanels.length) {
+    const syncBlogPanels = () => {
+      const activePlatform = blogPlatformSelect.value;
+      blogPlatformPanels.forEach((panel) => {
+        const isActive = panel.dataset.blogPlatformPanel === activePlatform;
+        panel.classList.toggle("is-active", isActive);
+        panel.querySelectorAll("input, select, textarea").forEach((field) => {
+          field.disabled = !isActive;
+        });
+        panel.querySelectorAll("button[type='submit']").forEach((field) => {
+          field.disabled = !isActive;
+        });
+      });
+    };
+
+    blogPlatformSelect.addEventListener("change", syncBlogPanels);
+    syncBlogPanels();
+  }
+
+  const naverBlogConnectButton = document.getElementById("naver-blog-connect-button");
+  const naverBlogStatus = document.getElementById("naver-blog-connect-status");
+  const naverBlogIdInput = document.getElementById("naver-blog-id-input");
+  const naverCategoryIdInput = document.getElementById("naver-category-id-input");
+
+  if (naverBlogConnectButton && naverBlogStatus && naverBlogIdInput) {
+    const pollNaverConnectStatus = async (sessionId) => {
+      const poll = async () => {
+        const response = await fetch(`/channels/connect/blog/naver/status/${sessionId}`);
+        if (!response.ok) {
+          naverBlogStatus.textContent = "연결 상태를 확인하지 못했습니다. 다시 시도해 주세요.";
+          naverBlogConnectButton.disabled = false;
+          naverBlogConnectButton.textContent = "네이버 로그인 창 열기";
+          return;
+        }
+
+        const payload = await response.json();
+        naverBlogStatus.textContent = payload.message || "연결 상태를 확인하는 중입니다.";
+
+        if (payload.status === "connected") {
+          naverBlogConnectButton.disabled = false;
+          naverBlogConnectButton.textContent = "네이버 로그인 창 다시 열기";
+          window.setTimeout(() => window.location.reload(), 1000);
+          return;
+        }
+
+        if (payload.status === "failed") {
+          naverBlogConnectButton.disabled = false;
+          naverBlogConnectButton.textContent = "네이버 로그인 창 열기";
+          return;
+        }
+
+        window.setTimeout(poll, 1800);
+      };
+
+      await poll();
+    };
+
+    naverBlogConnectButton.addEventListener("click", async () => {
+      const blogId = naverBlogIdInput.value.trim();
+      const categoryId = naverCategoryIdInput ? naverCategoryIdInput.value.trim() : "";
+
+      if (!blogId) {
+        naverBlogStatus.textContent = "먼저 Naver Blog ID를 입력해 주세요.";
+        naverBlogIdInput.focus();
+        return;
+      }
+
+      naverBlogConnectButton.disabled = true;
+      naverBlogConnectButton.textContent = "창 여는 중...";
+      naverBlogStatus.textContent = "네이버 로그인 창을 준비하고 있습니다.";
+
+      const formData = new FormData();
+      formData.append("blog_id", blogId);
+      formData.append("category_id", categoryId);
+
+      const response = await fetch("/channels/connect/blog/naver/start", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        naverBlogStatus.textContent = "네이버 로그인 창을 열지 못했습니다. 잠시 후 다시 시도해 주세요.";
+        naverBlogConnectButton.disabled = false;
+        naverBlogConnectButton.textContent = "네이버 로그인 창 열기";
+        return;
+      }
+
+      const payload = await response.json();
+      naverBlogStatus.textContent = payload.message || "네이버 창이 열렸습니다. 로그인 후 잠시 기다려 주세요.";
+      naverBlogConnectButton.textContent = "로그인 진행 중...";
+      pollNaverConnectStatus(payload.session_id);
+    });
+  }
 
   const captionEditor = document.getElementById("live-caption-editor");
   const hashtagEditor = document.getElementById("live-hashtags-editor");

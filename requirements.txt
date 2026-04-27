@@ -4,6 +4,7 @@ httpx
 jinja2
 openai
 pillow
+playwright
 pydantic-settings
 pytest
 pytest-asyncio

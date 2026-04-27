@@ -38,11 +38,16 @@ python -m scripts.sd35_wrapper
 curl http://127.0.0.1:8188/health
 ```
 
-메인 앱의 `.env`는 이미 아래처럼 맞춰져 있습니다.
+메인 앱의 `.env`는 빠른 기본값 기준 아래처럼 맞춰져 있습니다.
 
 ```env
 IMAGE_PROVIDER=sd35
 SD35_ENDPOINT_URL=http://127.0.0.1:8188/sd35/generate
+SD35_MODEL=stabilityai/sdxl-turbo
+SD35_WIDTH=1024
+SD35_HEIGHT=768
+SD35_STEPS=4
+SD35_GUIDANCE_SCALE=2.0
 SD35_FALLBACK_TO_LOCAL=true
 ```
 
@@ -116,17 +121,17 @@ GPU 메모리가 부족하면 먼저 아래 선택지를 고려하세요.
 
 ## 3. wrapper API 형식
 
-요청:
+요청 예시:
 
 ```json
 {
-  "model": "stabilityai/stable-diffusion-3.5-large",
+  "model": "stabilityai/sdxl-turbo",
   "prompt": "premium cafe campaign background, no text",
   "negative_prompt": "readable text, logo, watermark",
-  "width": 1536,
-  "height": 1024,
-  "num_inference_steps": 28,
-  "guidance_scale": 3.5,
+  "width": 1024,
+  "height": 768,
+  "num_inference_steps": 4,
+  "guidance_scale": 2.0,
   "response_format": "b64_json"
 }
 ```

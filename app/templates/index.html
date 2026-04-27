@@ -106,26 +106,145 @@
       강조 키워드
       <input type="text" name="keywords" value="{{ form.keywords }}" placeholder="예: 수제 디저트, 예약 가능, 당일 제작" />
     </label>
-    <label class="full">
-      참고 이미지
-      <input type="file" name="image" accept=".png,.jpg,.jpeg,.webp" />
-    </label>
     <div class="submit-row">
       <button type="submit" id="generate-button">채널별 패키지 생성하기</button>
-      <p>Instagram, Threads, 포스터용 문구와 품질 점수, 예약 게시 준비 정보를 함께 생성합니다.</p>
+      <p>먼저 브리프와 문구를 만든 뒤, 다음 화면에서 참고 이미지를 넣고 배너를 다시 생성할 수 있습니다.</p>
     </div>
   </form>
 </section>
+
+<div class="generation-loader" id="generation-loader" aria-hidden="true">
+  <div class="generation-loader__panel" role="status" aria-live="polite">
+    <p class="section-label">GENERATING</p>
+    <h3>이미지와 문구를 만드는 중입니다</h3>
+    <p class="generation-loader__copy" id="loader-copy">
+      브리프를 읽고 채널별 전략과 비주얼 방향을 정리하고 있어요.
+    </p>
+
+    <div class="generation-loader__visual" aria-hidden="true">
+      <div class="loader-card loader-card--wide">
+        <span></span>
+        <strong>Instagram Feed</strong>
+        <small>Hero image + caption</small>
+      </div>
+      <div class="loader-card">
+        <span></span>
+        <strong>Threads</strong>
+        <small>Short hook</small>
+      </div>
+      <div class="loader-card">
+        <span></span>
+        <strong>Blog</strong>
+        <small>Title + intro</small>
+      </div>
+    </div>
+
+    <div class="generation-loader__stats">
+      <div class="loader-stat">
+        <small>경과 시간</small>
+        <strong id="loader-elapsed">00:00</strong>
+      </div>
+      <div class="loader-stat">
+        <small>현재 단계</small>
+        <strong id="loader-stage">브리프 분석</strong>
+      </div>
+    </div>
+
+    <div class="generation-loader__progress" aria-hidden="true">
+      <i></i>
+    </div>
+    <p class="generation-loader__hint" id="loader-hint">
+      보통 몇 초 안에 끝나지만, AI 응답 지연 시에는 조금 더 걸릴 수 있습니다.
+    </p>
+  </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
   const form = document.querySelector(".brief-form");
   const button = document.getElementById("generate-button");
+  const loader = document.getElementById("generation-loader");
+  const loaderElapsed = document.getElementById("loader-elapsed");
+  const loaderStage = document.getElementById("loader-stage");
+  const loaderCopy = document.getElementById("loader-copy");
+  const loaderHint = document.getElementById("loader-hint");
+  const phases = [
+    {
+      stage: "브리프 분석",
+      copy: "브리프를 읽고 채널별 전략과 비주얼 방향을 정리하고 있어요.",
+      hint: "입력한 업종, 타깃, 톤을 기준으로 문구 방향을 맞추는 단계입니다.",
+    },
+    {
+      stage: "카피 생성",
+      copy: "Instagram, Threads, Blog용 문구와 CTA를 구성하고 있습니다.",
+      hint: "채널별 길이와 말투를 나눠서 후킹 문장을 만드는 단계입니다.",
+    },
+    {
+      stage: "배경 이미지 생성",
+      copy: "배너에 사용할 비주얼 배경과 프롬프트를 준비하고 있어요.",
+      hint: "로컬 SD3.5 또는 fallback 경로에 따라 시간이 조금 달라질 수 있습니다.",
+    },
+    {
+      stage: "배너 합성",
+      copy: "카피와 이미지를 합쳐 업로드 전 미리보기를 만드는 중입니다.",
+      hint: "결과 페이지로 넘어가면 배너 초안과 각 채널 미리보기를 바로 볼 수 있습니다.",
+    },
+  ];
+
+  let timerId = null;
+  let phaseId = null;
+
+  function formatElapsed(totalSeconds) {
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, "0");
+    const seconds = String(totalSeconds % 60).padStart(2, "0");
+    return `${minutes}:${seconds}`;
+  }
+
+  function showPhase(index) {
+    const phase = phases[index % phases.length];
+    loaderStage.textContent = phase.stage;
+    loaderCopy.textContent = phase.copy;
+    loaderHint.textContent = phase.hint;
+  }
 
   form.addEventListener("submit", () => {
+    const startedAt = Date.now();
+    let phaseIndex = 0;
+
     button.disabled = true;
     button.textContent = "생성 중...";
+    document.body.classList.add("loading-active");
+    loader.classList.add("is-visible");
+    loader.setAttribute("aria-hidden", "false");
+    showPhase(phaseIndex);
+    loaderElapsed.textContent = "00:00";
+
+    timerId = window.setInterval(() => {
+      const elapsedSeconds = Math.floor((Date.now() - startedAt) / 1000);
+      loaderElapsed.textContent = formatElapsed(elapsedSeconds);
+    }, 1000);
+
+    phaseId = window.setInterval(() => {
+      phaseIndex += 1;
+      showPhase(phaseIndex);
+    }, 2400);
+  });
+
+  window.addEventListener("pageshow", () => {
+    document.body.classList.remove("loading-active");
+    loader.classList.remove("is-visible");
+    loader.setAttribute("aria-hidden", "true");
+    button.disabled = false;
+    button.textContent = "채널별 패키지 생성하기";
+    if (timerId) {
+      window.clearInterval(timerId);
+      timerId = null;
+    }
+    if (phaseId) {
+      window.clearInterval(phaseId);
+      phaseId = null;
+    }
   });
 </script>
 {% endblock %}

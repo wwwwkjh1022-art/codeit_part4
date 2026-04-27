@@ -31,7 +31,7 @@ class ScheduleCampaignRequest(BaseModel):
         default_factory=lambda: ["instagram", "threads", "blog"]
     )
     scheduled_at: datetime | None = None
-    automation_provider: str = "n8n"
+    automation_provider: str = "direct_api"
     repeat_interval: str = "none"
     repeat_count: int = 1
 
@@ -76,6 +76,9 @@ async def generate_campaign_for_automation(
 
     try:
         result = await AutoGenerationPipeline(settings).generate_until_pass(form_data)
+    except TimeoutError:
+        result = await MockCopyGenerator(provider_name="mock-fallback").generate(form_data)
+        warning = "AI 응답 지연으로 mock fallback 결과를 생성했습니다."
     except AuthenticationError:
         result = await MockCopyGenerator(provider_name="mock-fallback").generate(form_data)
         warning = "OPENAI_API_KEY 인증 실패로 mock fallback 결과를 생성했습니다."
@@ -231,7 +234,9 @@ async def publish_campaign_now_for_automation(campaign_id: str) -> CampaignRecor
             raise HTTPException(status_code=404, detail="캠페인을 찾을 수 없습니다.")
         job = campaign.publish_jobs[-1]
 
-    published_job = await build_publish_adapter().publish(campaign, job)
+    published_job = await build_publish_adapter(settings, provider=job.provider).publish(
+        campaign, job
+    )
     updated = store.update_publish_job(campaign_id, published_job)
     if updated is None:
         raise HTTPException(status_code=404, detail="캠페인을 찾을 수 없습니다.")

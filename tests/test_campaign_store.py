@@ -89,3 +89,17 @@ def test_campaign_store_saves_automation_provider_and_recurrence(tmp_path):
     assert job.recurrence == "daily"
     assert job.sequence_index == 2
     assert job.sequence_total == 7
+
+
+def test_campaign_store_updates_result(tmp_path):
+    settings = _settings(tmp_path)
+    settings.ensure_runtime_directories()
+    store = CampaignStore(settings)
+    form, result = _build_form_and_result()
+
+    campaign = store.create(form, result)
+    updated_result = result.model_copy(update={"banner_preview_path": "/static/generated/banners/new-banner.png"})
+    updated_campaign = store.update_result(campaign.id, updated_result)
+
+    assert updated_campaign is not None
+    assert updated_campaign.result.banner_preview_path == "/static/generated/banners/new-banner.png"

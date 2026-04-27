@@ -22,6 +22,7 @@ class BannerGenerator:
     ) -> str:
         theme = self._select_theme(form_data.visual_style)
         width, height = 1200, 628
+        has_uploaded_reference = self._has_uploaded_reference(uploaded_image_path)
         image = self._create_base_image(
             width=width,
             height=height,
@@ -29,11 +30,18 @@ class BannerGenerator:
             background_image_path=background_image_path,
             uploaded_image_path=uploaded_image_path,
         )
-        draw = ImageDraw.Draw(image)
 
-        self._apply_readability_layers(image, theme, has_photo=bool(background_image_path or uploaded_image_path))
-        self._draw_campaign_copy(draw, form_data, result, theme)
-        self._draw_brand_marks(draw, form_data, result, theme, width, height)
+        if has_uploaded_reference:
+            self._apply_photo_showcase_finish(image)
+        else:
+            draw = ImageDraw.Draw(image)
+            self._apply_readability_layers(
+                image,
+                theme,
+                has_photo=bool(background_image_path or uploaded_image_path),
+            )
+            self._draw_campaign_copy(draw, form_data, result, theme)
+            self._draw_brand_marks(draw, form_data, result, theme, width, height)
 
         output_path = self.settings.banner_dir / f"banner-{uuid4().hex}.png"
         image.convert("RGB").save(output_path, quality=94)
@@ -47,17 +55,16 @@ class BannerGenerator:
         background_image_path: str | None,
         uploaded_image_path: str | None,
     ) -> Image.Image:
-        background_path = self._resolve_static_path(background_image_path)
         uploaded_path = self._resolve_static_path(uploaded_image_path)
+        background_path = self._resolve_static_path(background_image_path)
+
+        if uploaded_path and uploaded_path.exists():
+            with Image.open(uploaded_path).convert("RGBA") as source:
+                return ImageOps.fit(source, (width, height), method=Image.Resampling.LANCZOS)
 
         if background_path and background_path.exists():
             with Image.open(background_path).convert("RGBA") as source:
                 return ImageOps.fit(source, (width, height), method=Image.Resampling.LANCZOS)
-
-        if uploaded_path and uploaded_path.exists():
-            with Image.open(uploaded_path).convert("RGBA") as source:
-                base = ImageOps.fit(source, (width, height), method=Image.Resampling.LANCZOS)
-                return base.filter(ImageFilter.GaussianBlur(radius=7))
 
         return self._draw_modern_fallback_background(width, height, theme)
 
@@ -121,6 +128,31 @@ class BannerGenerator:
             radius=34,
             outline=self._hex_to_rgba("#FFFFFF", 80),
             width=2,
+        )
+        image.alpha_composite(overlay)
+
+    def _apply_photo_showcase_finish(self, image: Image.Image) -> None:
+        width, height = image.size
+        overlay = Image.new("RGBA", image.size, (255, 255, 255, 0))
+        draw = ImageDraw.Draw(overlay)
+
+        # Keep uploaded photos crisp and clean, with only a subtle edge treatment.
+        for y in range(height):
+            ratio = y / height
+            alpha = int(24 + ratio * 36)
+            draw.line((0, y, width, y), fill=(20, 16, 14, alpha))
+
+        draw.rounded_rectangle(
+            (18, 18, width - 18, height - 18),
+            radius=34,
+            outline=(255, 255, 255, 165),
+            width=2,
+        )
+        draw.rounded_rectangle(
+            (32, 32, width - 32, height - 32),
+            radius=30,
+            outline=(255, 255, 255, 88),
+            width=1,
         )
         image.alpha_composite(overlay)
 
@@ -228,6 +260,10 @@ class BannerGenerator:
         if not path:
             return None
         return self.settings.static_dir / path.removeprefix("/static/")
+
+    def _has_uploaded_reference(self, uploaded_image_path: str | None) -> bool:
+        path = self._resolve_static_path(uploaded_image_path)
+        return bool(path and path.exists())
 
     def _load_font(self, size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
         if self.settings.default_font_path.exists():

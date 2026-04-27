@@ -1,3 +1,5 @@
+import asyncio
+
 import pytest
 
 from app.schemas.form import AdGenerationForm
@@ -100,3 +102,24 @@ def test_openai_normalize_payload_fills_missing_channel_fields():
     assert normalized["channel_quality"]["blog_score"] >= 0
     assert len(normalized["quality_report"]["improvement_suggestions"]) >= 2
     assert len(normalized["pre_publish_checklist"]) >= 3
+
+
+@pytest.mark.asyncio
+async def test_openai_generator_times_out_safely():
+    class SlowResponses:
+        async def create(self, **kwargs):
+            await asyncio.sleep(0.05)
+            return None
+
+    class SlowClient:
+        responses = SlowResponses()
+
+    generator = OpenAICopyGenerator(
+        api_key="test-key",
+        model="gpt-5-mini",
+        timeout_seconds=0.01,
+    )
+    generator.client = SlowClient()
+
+    with pytest.raises(TimeoutError, match="timed out"):
+        await generator.generate(_build_form())

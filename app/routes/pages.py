@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from openai import APIError, AuthenticationError
 from starlette.responses import RedirectResponse
 
@@ -12,6 +12,8 @@ from app.schemas.result import GenerationResult
 from app.services.banner_generator import BannerGenerator
 from app.services.background_generator import BackgroundGenerator
 from app.services.campaign_store import CampaignStore
+from app.services.channel_connection_store import ChannelConnectionStore
+from app.services.naver_blog_connect import naver_blog_connect_service
 from app.services.adapters.mock_copy import MockCopyGenerator
 from app.services.generation_pipeline import AutoGenerationPipeline
 from app.services.publishers import build_publish_adapter
@@ -95,6 +97,10 @@ async def generate(
 
     try:
         result = await pipeline.generate_until_pass(form_data)
+    except TimeoutError:
+        fallback = MockCopyGenerator(provider_name="mock-fallback")
+        result = await fallback.generate(form_data)
+        warning = "AI 응답이 지연돼 기본 생성 로직으로 결과를 만들었습니다. 잠시 후 다시 시도해주세요."
     except AuthenticationError:
         fallback = MockCopyGenerator(provider_name="mock-fallback")
         result = await fallback.generate(form_data)
@@ -130,6 +136,8 @@ async def generate(
             campaign=campaign,
             warning=warning,
             uploaded_image_path=uploaded_image_path,
+            channel_connections=ChannelConnectionStore(settings).get(),
+            active_workbench_tab="image",
         ),
     )
 
@@ -163,6 +171,8 @@ async def campaign_detail(request: Request, campaign_id: str) -> HTMLResponse:
             campaign=campaign,
             warning=None,
             uploaded_image_path=campaign.uploaded_image_path,
+            channel_connections=ChannelConnectionStore(settings).get(),
+            active_workbench_tab="image",
         ),
     )
 
@@ -183,7 +193,7 @@ async def schedule_campaign(
     instagram: str | None = Form(default=None),
     threads: str | None = Form(default=None),
     blog: str | None = Form(default=None),
-    automation_provider: str = Form("n8n"),
+    automation_provider: str = Form("direct_api"),
     repeat_interval: str = Form("none"),
     repeat_count: int = Form(1),
 ) -> RedirectResponse:
@@ -239,10 +249,153 @@ async def publish_campaign_now(campaign_id: str) -> RedirectResponse:
         campaign = scheduled
         job = campaign.publish_jobs[-1]
 
-    adapter = build_publish_adapter()
+    adapter = build_publish_adapter(settings, provider=job.provider)
     published_job = await adapter.publish(campaign, job)
     store.update_publish_job(campaign_id, published_job)
     return RedirectResponse(url=f"/campaigns/{campaign_id}", status_code=303)
+
+
+@router.post("/channels/connect/instagram")
+async def connect_instagram_api(
+    access_token: str = Form(...),
+    instagram_user_id: str = Form(...),
+    redirect_to: str = Form("/"),
+) -> RedirectResponse:
+    settings = get_settings()
+    ChannelConnectionStore(settings).save_instagram(
+        access_token=access_token,
+        instagram_user_id=instagram_user_id,
+    )
+    return RedirectResponse(url=redirect_to or "/", status_code=303)
+
+
+@router.post("/channels/connect/threads")
+async def connect_threads_api(
+    access_token: str = Form(...),
+    threads_user_id: str = Form(...),
+    redirect_to: str = Form("/"),
+) -> RedirectResponse:
+    settings = get_settings()
+    ChannelConnectionStore(settings).save_threads(
+        access_token=access_token,
+        threads_user_id=threads_user_id,
+    )
+    return RedirectResponse(url=redirect_to or "/", status_code=303)
+
+
+@router.post("/channels/connect/blog")
+async def connect_blog_api(
+    api_base_url: str = Form(""),
+    naver_username: str = Form(""),
+    wordpress_username: str = Form(""),
+    application_password: str = Form(""),
+    login_password: str = Form(""),
+    blog_id: str = Form(""),
+    category_id: str = Form(""),
+    platform: str = Form("naver_blog"),
+    redirect_to: str = Form("/"),
+) -> RedirectResponse:
+    settings = get_settings()
+    username = naver_username if platform == "naver_blog" else wordpress_username
+    ChannelConnectionStore(settings).save_blog(
+        api_base_url=api_base_url,
+        username=username,
+        application_password=application_password,
+        platform=platform,
+        blog_id=blog_id,
+        category_id=category_id,
+        login_password=login_password,
+    )
+    return RedirectResponse(url=redirect_to or "/", status_code=303)
+
+
+@router.post("/channels/connect/blog/naver/start")
+async def start_naver_blog_connect(
+    blog_id: str = Form(...),
+    category_id: str = Form(""),
+) -> JSONResponse:
+    settings = get_settings()
+    session = naver_blog_connect_service.start(settings, blog_id=blog_id, category_id=category_id)
+    return JSONResponse(
+        {
+            "session_id": session.id,
+            "status": session.status,
+            "message": session.message,
+        }
+    )
+
+
+@router.get("/channels/connect/blog/naver/status/{session_id}")
+async def get_naver_blog_connect_status(session_id: str) -> JSONResponse:
+    session = naver_blog_connect_service.get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="연결 세션을 찾을 수 없습니다.")
+    return JSONResponse(session.model_dump(mode="json"))
+
+
+@router.post("/campaigns/{campaign_id}/image-regenerate", response_class=HTMLResponse)
+async def regenerate_campaign_image(
+    request: Request,
+    campaign_id: str,
+    image_prompt: str = Form(""),
+    image: UploadFile | None = File(default=None),
+) -> HTMLResponse:
+    settings = get_settings()
+    templates = request.app.state.templates
+    store = CampaignStore(settings)
+    campaign = store.get(campaign_id)
+    if campaign is None:
+        raise HTTPException(status_code=404, detail="캠페인을 찾을 수 없습니다.")
+
+    prompt = image_prompt.strip() or (
+        campaign.result.background_asset.prompt
+        if campaign.result.background_asset
+        else ""
+    )
+    uploaded_image_path = save_upload_file(image, settings) or campaign.uploaded_image_path
+    background_asset = await BackgroundGenerator(settings).prepare(
+        campaign.form,
+        campaign.result,
+        prompt_override=prompt,
+    )
+    updated_result = campaign.result.model_copy(update={"background_asset": background_asset})
+    banner_preview_path = BannerGenerator(settings).create_preview(
+        form_data=campaign.form,
+        result=updated_result,
+        uploaded_image_path=uploaded_image_path,
+        background_image_path=background_asset.image_path,
+    )
+    updated_result = updated_result.model_copy(update={"banner_preview_path": banner_preview_path})
+    updated_campaign = store.update_result(
+        campaign_id,
+        updated_result,
+        uploaded_image_path=uploaded_image_path,
+    )
+    if updated_campaign is None:
+        raise HTTPException(status_code=404, detail="캠페인을 찾을 수 없습니다.")
+
+    warning = None
+    if background_asset.status in {"failed", "skipped"}:
+        warning = background_asset.note or "이미지 생성에 실패해 기존 프롬프트만 유지했습니다."
+    elif background_asset.status == "generated_fallback":
+        warning = background_asset.note or "이미지 생성이 fallback 경로로 완료되었습니다."
+    else:
+        warning = "이미지 프롬프트를 기준으로 배경과 배너를 다시 생성했습니다."
+
+    return templates.TemplateResponse(
+        request=request,
+        name="result.html",
+        context=_build_context(
+            request,
+            form=updated_campaign.form.model_dump(),
+            result=updated_campaign.result,
+            campaign=updated_campaign,
+            warning=warning,
+            uploaded_image_path=updated_campaign.uploaded_image_path,
+            channel_connections=ChannelConnectionStore(settings).get(),
+            active_workbench_tab="image",
+        ),
+    )
 
 
 @router.post("/campaigns/{campaign_id}/regenerate")
@@ -259,6 +412,10 @@ async def regenerate_campaign(request: Request, campaign_id: str) -> HTMLRespons
     warning: str | None = None
     try:
         result = await pipeline.generate_until_pass(form_data)
+    except TimeoutError:
+        fallback = MockCopyGenerator(provider_name="mock-fallback")
+        result = await fallback.generate(form_data)
+        warning = "AI 응답이 지연돼 기본 생성 로직으로 결과를 만들었습니다. 잠시 후 다시 시도해주세요."
     except AuthenticationError:
         fallback = MockCopyGenerator(provider_name="mock-fallback")
         result = await fallback.generate(form_data)
@@ -295,6 +452,8 @@ async def regenerate_campaign(request: Request, campaign_id: str) -> HTMLRespons
             campaign=new_campaign,
             warning=warning,
             uploaded_image_path=campaign.uploaded_image_path,
+            channel_connections=ChannelConnectionStore(settings).get(),
+            active_workbench_tab="image",
         ),
     )
 

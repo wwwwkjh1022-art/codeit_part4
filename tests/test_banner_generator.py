@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from PIL import Image
+
 from app.config import Settings
 from app.schemas.form import AdGenerationForm
 from app.schemas.result import (
@@ -112,5 +114,102 @@ def test_banner_generator_creates_preview(tmp_path: Path):
     output = generator.create_preview(form, result)
 
     assert output.startswith("/static/generated/banners/")
+    output_path = settings.banner_dir / output.split("/")[-1]
+    assert output_path.exists()
+
+
+def test_banner_generator_uses_uploaded_image_without_overlay_copy(tmp_path: Path):
+    settings = Settings(
+        generated_dir=tmp_path / "generated",
+        upload_dir=tmp_path / "generated" / "uploads",
+        banner_dir=tmp_path / "generated" / "banners",
+        static_dir=tmp_path / "static",
+        templates_dir=tmp_path / "templates",
+        copy_provider="mock",
+    )
+    settings.ensure_runtime_directories()
+    generator = BannerGenerator(settings)
+
+    upload_path = settings.upload_dir / "reference.png"
+    Image.new("RGB", (1200, 628), "#7a2f20").save(upload_path)
+
+    form = AdGenerationForm(
+        business_category="카페",
+        business_name="코드잇",
+        product_name="딸기라떼",
+        product_description="계절 메뉴",
+        offer_details="신규 고객 유입",
+        target_customer="동네 주민",
+        promotion_goal="매장 방문",
+        tone="친근한",
+        platform="인스타그램",
+        visual_style="따뜻한 감성",
+        cta_focus="방문 유도",
+        campaign_type="신상품/신메뉴",
+        desired_action="매장 방문",
+        post_timing_preference="평일 점심",
+        keywords="딸기라떼",
+    )
+    result = GenerationResult(
+        headline="딸기라떼 혜택",
+        body_copy="방문 전 혜택을 확인해보세요.",
+        cta="혜택 살펴보기",
+        strategy_note="업로드한 대표 이미지를 메인으로 사용합니다.",
+        image_direction="실제 제품 사진 중심",
+        caption="딸기라떼",
+        hashtags=["#딸기라떼"],
+        channel_packages=ChannelPackages(
+            instagram=InstagramPackage(
+                caption="딸기라떼",
+                hashtags=["#딸기라떼"],
+                alt_text="딸기라떼",
+                visual_hook="실제 제품 이미지",
+                recommended_post_time="평일 점심 11:30~13:00",
+            ),
+            threads=ThreadsPackage(
+                thread_text="딸기라떼",
+                reply_prompt="어떠세요?",
+                short_hook="딸기라떼",
+                recommended_post_time="평일 점심 11:30~13:00",
+            ),
+            blog=BlogPackage(
+                title="딸기라떼",
+                intro="딸기라떼",
+                body_outline=["딸기라떼"],
+                seo_keywords=["딸기라떼"],
+                cta="딸기라떼",
+                meta_description="딸기라떼",
+            ),
+            poster=PosterPackage(
+                headline="딸기라떼 혜택",
+                subcopy="방문 전 혜택 확인",
+                cta="혜택 보기",
+                visual_direction="실제 제품 이미지",
+            ),
+        ),
+        quality_report=QualityReport(
+            hook_score=80,
+            clarity_score=80,
+            cta_score=80,
+            channel_fit_score=80,
+            overall_score=80,
+            improvement_suggestions=[],
+        ),
+        channel_quality=ChannelQualityReport(
+            instagram_score=80,
+            threads_score=80,
+            blog_score=80,
+            failed_channels=[],
+            regeneration_suggestions=[],
+        ),
+        auto_approved=True,
+    )
+
+    output = generator.create_preview(
+        form,
+        result,
+        uploaded_image_path="/static/generated/uploads/reference.png",
+    )
+
     output_path = settings.banner_dir / output.split("/")[-1]
     assert output_path.exists()

@@ -19,8 +19,9 @@ class BackgroundGenerator:
         self,
         form_data: AdGenerationForm,
         result: GenerationResult,
+        prompt_override: str | None = None,
     ) -> BackgroundAsset:
-        prompt = self._build_prompt(form_data, result)
+        prompt = (prompt_override or "").strip() or self._build_prompt(form_data, result)
         provider = self.settings.resolved_image_provider
 
         if provider not in {"gemini", "openai", "sd35"}:

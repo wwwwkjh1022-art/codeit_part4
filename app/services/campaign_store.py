@@ -143,6 +143,34 @@ class CampaignStore:
             self._write_records(records)
         return updated_record
 
+    def update_result(
+        self,
+        campaign_id: str,
+        result: GenerationResult,
+        uploaded_image_path: str | None = None,
+    ) -> CampaignRecord | None:
+        records = self._read_records()
+        updated_record: CampaignRecord | None = None
+        for index, record in enumerate(records):
+            if record.id != campaign_id:
+                continue
+            updated_record = record.model_copy(
+                update={
+                    "result": result,
+                    "uploaded_image_path": (
+                        uploaded_image_path
+                        if uploaded_image_path is not None
+                        else record.uploaded_image_path
+                    ),
+                    "updated_at": datetime.now(),
+                }
+            )
+            records[index] = updated_record
+            break
+        if updated_record is not None:
+            self._write_records(records)
+        return updated_record
+
     def _read_records(self) -> list[CampaignRecord]:
         if not self.path.exists():
             return []

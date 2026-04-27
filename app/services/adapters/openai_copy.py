@@ -1,3 +1,4 @@
+import asyncio
 import json
 from json import JSONDecodeError
 
@@ -23,32 +24,49 @@ from app.utils.prompts import (
 
 
 class OpenAICopyGenerator:
-    def __init__(self, api_key: str | None, model: str, reasoning_effort: str = "medium") -> None:
+    def __init__(
+        self,
+        api_key: str | None,
+        model: str,
+        reasoning_effort: str = "medium",
+        timeout_seconds: int = 15,
+    ) -> None:
         if not api_key:
             raise ValueError("OPENAI_API_KEY is required for the OpenAI provider.")
         self.client = AsyncOpenAI(api_key=api_key)
         self.model = model
         self.reasoning_effort = reasoning_effort
+        self.timeout_seconds = timeout_seconds
 
     async def generate(self, form_data: AdGenerationForm) -> GenerationResult:
-        response = await self.client.responses.create(
-            model=self.model,
-            reasoning={"effort": self.reasoning_effort},
-            text={
-                "format": build_generation_response_schema(),
-                "verbosity": "medium",
-            },
-            input=[
-                {
-                    "role": "system",
-                    "content": [{"type": "input_text", "text": build_system_prompt()}],
-                },
-                {
-                    "role": "user",
-                    "content": [{"type": "input_text", "text": build_generation_prompt(form_data)}],
-                },
-            ],
-        )
+        try:
+            response = await asyncio.wait_for(
+                self.client.responses.create(
+                    model=self.model,
+                    reasoning={"effort": self.reasoning_effort},
+                    text={
+                        "format": build_generation_response_schema(),
+                        "verbosity": "medium",
+                    },
+                    input=[
+                        {
+                            "role": "system",
+                            "content": [{"type": "input_text", "text": build_system_prompt()}],
+                        },
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "input_text", "text": build_generation_prompt(form_data)}
+                            ],
+                        },
+                    ],
+                ),
+                timeout=self.timeout_seconds,
+            )
+        except asyncio.TimeoutError as exc:
+            raise TimeoutError(
+                f"OpenAI copy generation timed out after {self.timeout_seconds} seconds."
+            ) from exc
         payload = self._parse_json(response.output_text)
         normalized = self._normalize_payload(payload, form_data)
         variants = [
