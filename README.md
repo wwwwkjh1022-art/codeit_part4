@@ -8,6 +8,46 @@
 - 보고서 PDF: [보고서.pdf](제출용_패키지/보고서.pdf)
 - 협업 일지 PDF: [업무일지_정리.pdf](제출용_패키지/업무일지_정리.pdf)
 
+## 실제 작동 화면
+
+이 프로젝트는 `브리프 입력 -> 생성 중 로딩 -> 3채널 미리보기 -> 이미지 재생성 -> 채널 연결/예약 -> 게시 전 문구 수정` 흐름으로 작동합니다.
+
+### 1. 브리프 입력
+
+업종, 상호명, 상품명, 혜택, 타깃 고객 같은 핵심 정보만 넣으면 됩니다.
+
+<img src="docs/screenshots/readme/step1-brief-input.png" alt="브리프 입력 화면" width="100%" />
+
+### 2. 생성 중 로딩 화면
+
+생성 버튼을 누르면 경과 시간과 현재 단계를 보여주면서 결과를 준비합니다.
+
+<img src="docs/screenshots/readme/step2-generating.png" alt="생성 중 로딩 화면" width="100%" />
+
+### 3. 3채널 미리보기
+
+생성이 끝나면 Instagram, Threads, Blog 초안을 한 번에 확인할 수 있습니다.
+
+<img src="docs/screenshots/readme/step3-content-preview.png" alt="3채널 미리보기 화면" width="100%" />
+
+### 4. 이미지 재생성
+
+결과 페이지에서 참고 이미지를 넣거나 프롬프트를 수정해서 배너를 다시 만들 수 있습니다.
+
+<img src="docs/screenshots/readme/step4-image-regenerate.png" alt="이미지 재생성 화면" width="100%" />
+
+### 5. 채널 연결과 예약/게시 준비
+
+Instagram / Threads API 값 입력, Naver Blog 연결, 예약 저장 흐름까지 한 화면에서 이어집니다.
+
+<img src="docs/screenshots/readme/step5-connect-and-publish.png" alt="채널 연결과 예약 화면" width="100%" />
+
+### 6. 게시 전 최종 문구 수정
+
+실제 업로드 전에 채널별 문구를 직접 수정하면서 미세 조정할 수 있습니다.
+
+<img src="docs/screenshots/readme/step6-edit-before-post.png" alt="게시 전 문구 수정 화면" width="100%" />
+
 ## 프로젝트 소개
 
 이 프로젝트는 단순 문구 생성기가 아니라, 실제 서비스 형태로 사용할 수 있는 광고 콘텐츠 생성 도구를 목표로 만들었습니다.
