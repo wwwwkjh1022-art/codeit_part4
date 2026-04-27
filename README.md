@@ -5,8 +5,7 @@
 ## 제출 바로가기
 
 - Github Repository: [codeit_part4](https://github.com/wwwwkjh1022-art/codeit_part4)
-- 발표 PDF: [고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
-- 보고서 PDF: [보고서.pdf](제출용_패키지/보고서.pdf)
+- 최종 제출용 발표 PDF: [고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
 - 협업 일지 PDF: [업무일지_정리.pdf](제출용_패키지/업무일지_정리.pdf)
 
 ## 실제 작동 화면
@@ -280,8 +279,6 @@ ALLOW_PAID_IMAGE_GENERATION=false
 ## 제출 자료
 
 - 제출용 패키지 안내: [제출용_패키지/README.md](제출용_패키지/README.md)
-- 발표 PDF: [docs/고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
-- 보고서 원고: [제출용_패키지/보고서_원고.md](제출용_패키지/보고서_원고.md)
-- 보고서 PDF: [제출용_패키지/보고서.pdf](제출용_패키지/보고서.pdf)
+- 최종 제출용 발표 PDF: [docs/고급 프로젝트 발표.pdf](docs/고급%20프로젝트%20발표.pdf)
 - 협업 일지 정리본: [제출용_패키지/업무일지_정리.md](제출용_패키지/업무일지_정리.md)
 - 협업 일지 PDF: [제출용_패키지/업무일지_정리.pdf](제출용_패키지/업무일지_정리.pdf)
