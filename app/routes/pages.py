@@ -137,7 +137,7 @@ async def generate(
             warning=warning,
             uploaded_image_path=uploaded_image_path,
             channel_connections=ChannelConnectionStore(settings).get(),
-            active_workbench_tab="image",
+            active_workbench_tab="content",
         ),
     )
 
@@ -172,7 +172,7 @@ async def campaign_detail(request: Request, campaign_id: str) -> HTMLResponse:
             warning=None,
             uploaded_image_path=campaign.uploaded_image_path,
             channel_connections=ChannelConnectionStore(settings).get(),
-            active_workbench_tab="image",
+            active_workbench_tab="content",
         ),
     )
 
@@ -333,12 +333,23 @@ async def get_naver_blog_connect_status(session_id: str) -> JSONResponse:
     return JSONResponse(session.model_dump(mode="json"))
 
 
+@router.post("/channels/connect/blog/naver/complete")
+async def complete_naver_blog_connect(session_id: str = Form(...)) -> JSONResponse:
+    settings = get_settings()
+    session = naver_blog_connect_service.complete(settings, session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="연결 세션을 찾을 수 없습니다.")
+    return JSONResponse(session.model_dump(mode="json"))
+
+
 @router.post("/campaigns/{campaign_id}/image-regenerate", response_class=HTMLResponse)
 async def regenerate_campaign_image(
     request: Request,
     campaign_id: str,
     image_prompt: str = Form(""),
     image: UploadFile | None = File(default=None),
+    image_mode: str = Form("default"),
+    gemini_api_key: str = Form(""),
 ) -> HTMLResponse:
     settings = get_settings()
     templates = request.app.state.templates
@@ -352,8 +363,22 @@ async def regenerate_campaign_image(
         if campaign.result.background_asset
         else ""
     )
+    active_image_mode = "gemini" if image_mode == "gemini" else "default"
     uploaded_image_path = save_upload_file(image, settings) or campaign.uploaded_image_path
-    background_asset = await BackgroundGenerator(settings).prepare(
+    background_settings = settings
+    banner_uploaded_image_path = uploaded_image_path
+
+    if active_image_mode == "gemini":
+        background_settings = settings.model_copy(
+            update={
+                "image_provider": "gemini",
+                "gemini_api_key": gemini_api_key.strip() or settings.gemini_api_key,
+                "allow_paid_image_generation": True,
+            }
+        )
+        banner_uploaded_image_path = None
+
+    background_asset = await BackgroundGenerator(background_settings).prepare(
         campaign.form,
         campaign.result,
         prompt_override=prompt,
@@ -362,7 +387,7 @@ async def regenerate_campaign_image(
     banner_preview_path = BannerGenerator(settings).create_preview(
         form_data=campaign.form,
         result=updated_result,
-        uploaded_image_path=uploaded_image_path,
+        uploaded_image_path=banner_uploaded_image_path,
         background_image_path=background_asset.image_path,
     )
     updated_result = updated_result.model_copy(update={"banner_preview_path": banner_preview_path})
@@ -393,7 +418,8 @@ async def regenerate_campaign_image(
             warning=warning,
             uploaded_image_path=updated_campaign.uploaded_image_path,
             channel_connections=ChannelConnectionStore(settings).get(),
-            active_workbench_tab="image",
+            active_workbench_tab="content",
+            active_image_mode=active_image_mode,
         ),
     )
 
@@ -453,7 +479,7 @@ async def regenerate_campaign(request: Request, campaign_id: str) -> HTMLRespons
             warning=warning,
             uploaded_image_path=campaign.uploaded_image_path,
             channel_connections=ChannelConnectionStore(settings).get(),
-            active_workbench_tab="image",
+            active_workbench_tab="content",
         ),
     )
 

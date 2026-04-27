@@ -17,7 +17,7 @@
     <div
       class="workbench-tabs"
       id="workbench-tabs"
-      data-active-workbench-tab="{{ active_workbench_tab if active_workbench_tab else 'image' }}"
+      data-active-workbench-tab="{{ active_workbench_tab if active_workbench_tab else 'content' }}"
     >
       <div class="workbench-tablist" role="tablist" aria-label="결과 작업 탭">
         <button type="button" class="workbench-tab" data-tab-target="image" role="tab">이미지 생성</button>
@@ -25,76 +25,155 @@
       </div>
 
       <div class="workbench-pane" data-tab-pane="image">
-        <div class="image-lab-grid">
-          <article class="image-lab-card image-lab-preview">
-            <div class="variant-top">
-              <div>
-                <p class="section-label">IMAGE LAB</p>
-                <h3>현재 배너/배경 미리보기</h3>
-              </div>
-              <span class="status-pill dark-pill">
-                {{ result.background_asset.provider if result.background_asset else "prompt_only" }}
-              </span>
-            </div>
-            <img src="{{ result.banner_preview_path }}" alt="현재 생성된 배너 미리보기" />
-            {% if uploaded_image_path %}
-            <p class="mini-note">현재 참고 이미지: {{ uploaded_image_path }}</p>
-            {% endif %}
-            {% if result.background_asset and result.background_asset.image_path %}
-            <p class="mini-note">현재 배경 이미지: {{ result.background_asset.image_path }}</p>
-            {% else %}
-            <p class="mini-note">아직 생성된 배경 이미지가 없으면 이번 탭에서 참고 이미지와 프롬프트를 함께 조정할 수 있습니다.</p>
-            {% endif %}
-          </article>
+        <div
+          class="image-mode-tabs"
+          id="image-mode-tabs"
+          data-active-image-mode="{{ active_image_mode if active_image_mode else 'default' }}"
+        >
+          <div class="image-mode-tablist" role="tablist" aria-label="이미지 생성 방식">
+            <button type="button" class="image-mode-tab" data-image-mode-target="default" role="tab">기본 이미지 생성</button>
+            <button type="button" class="image-mode-tab" data-image-mode-target="gemini" role="tab">Gemini / Nano Banana</button>
+          </div>
 
-          <article class="image-lab-card image-lab-form-card">
-            <div class="studio-heading">
-              <div>
-                <p class="section-label">REGENERATE IMAGE</p>
-                <h3>참고 이미지 넣고 다시 생성하기</h3>
-              </div>
-              <span class="status-dot">Prompt</span>
+          <div class="image-mode-pane" data-image-mode-pane="default">
+            <div class="image-lab-grid">
+              <article class="image-lab-card image-lab-preview">
+                <div class="variant-top">
+                  <div>
+                    <p class="section-label">IMAGE LAB</p>
+                    <h3>현재 배너/배경 미리보기</h3>
+                  </div>
+                  <span class="status-pill dark-pill">
+                    {{ result.background_asset.provider if result.background_asset else "prompt_only" }}
+                  </span>
+                </div>
+                <img src="{{ result.banner_preview_path }}" alt="현재 생성된 배너 미리보기" />
+                {% if uploaded_image_path %}
+                <p class="mini-note">현재 참고 이미지: {{ uploaded_image_path }}</p>
+                {% endif %}
+                {% if result.background_asset and result.background_asset.image_path %}
+                <p class="mini-note">현재 배경 이미지: {{ result.background_asset.image_path }}</p>
+                {% else %}
+                <p class="mini-note">아직 생성된 배경 이미지가 없으면 이번 탭에서 참고 이미지와 프롬프트를 함께 조정할 수 있습니다.</p>
+                {% endif %}
+              </article>
+
+              <article class="image-lab-card image-lab-form-card">
+                <div class="studio-heading">
+                  <div>
+                    <p class="section-label">REGENERATE IMAGE</p>
+                    <h3>참고 이미지 넣고 다시 생성하기</h3>
+                  </div>
+                  <span class="status-dot">Prompt</span>
+                </div>
+                <form
+                  action="/campaigns/{{ campaign.id }}/image-regenerate"
+                  method="post"
+                  enctype="multipart/form-data"
+                  class="image-regenerate-form"
+                  id="image-regenerate-form"
+                >
+                  <input type="hidden" name="image_mode" value="default" />
+                  <label>
+                    <span>참고 이미지 업로드</span>
+                    <input
+                      id="image-reference-input"
+                      type="file"
+                      name="image"
+                      accept=".png,.jpg,.jpeg,.webp"
+                    />
+                    <small class="image-input-hint" id="image-input-hint">
+                      브리프에서는 이미지를 받지 않고, 여기서만 업로드해서 배너 재생성에 반영합니다.
+                    </small>
+                  </label>
+                  <label>
+                    <span>이미지 생성 프롬프트</span>
+                    <textarea
+                      name="image_prompt"
+                      rows="13"
+                      placeholder="원하는 비주얼 스타일, 구도, 분위기, 제외 요소를 자유롭게 수정해 주세요."
+                    >{{ result.background_asset.prompt if result.background_asset else result.image_direction }}</textarea>
+                  </label>
+                  <div class="image-tip-list">
+                    <p><strong>수정 팁</strong></p>
+                    <p>예: warm editorial cafe table, premium dessert hero shot, clean negative space on left</p>
+                    <p>예: no text, no watermark, no logo, no people, realistic lighting</p>
+                    <p>생성 버튼을 누르면 경과 시간이 바로 표시됩니다.</p>
+                  </div>
+                  <button type="submit" class="secondary-btn" id="image-regenerate-button">이 이미지/프롬프트로 다시 생성</button>
+                </form>
+              </article>
             </div>
-            <form
-              action="/campaigns/{{ campaign.id }}/image-regenerate"
-              method="post"
-              enctype="multipart/form-data"
-              class="image-regenerate-form"
-              id="image-regenerate-form"
-            >
-              <label>
-                <span>참고 이미지 업로드</span>
-                <input
-                  id="image-reference-input"
-                  type="file"
-                  name="image"
-                  accept=".png,.jpg,.jpeg,.webp"
-                />
-                <small class="image-input-hint" id="image-input-hint">
-                  브리프에서는 이미지를 받지 않고, 여기서만 업로드해서 배너 재생성에 반영합니다.
-                </small>
-              </label>
-              <label>
-                <span>이미지 생성 프롬프트</span>
-                <textarea
-                  name="image_prompt"
-                  rows="13"
-                  placeholder="원하는 비주얼 스타일, 구도, 분위기, 제외 요소를 자유롭게 수정해 주세요."
-                >{{ result.background_asset.prompt if result.background_asset else result.image_direction }}</textarea>
-              </label>
-              <div class="image-tip-list">
-                <p><strong>수정 팁</strong></p>
-                <p>예: warm editorial cafe table, premium dessert hero shot, clean negative space on left</p>
-                <p>예: no text, no watermark, no logo, no people, realistic lighting</p>
-                <p>생성 버튼을 누르면 경과 시간이 바로 표시됩니다.</p>
-              </div>
-              <button type="submit" class="secondary-btn" id="image-regenerate-button">이 이미지/프롬프트로 다시 생성</button>
-            </form>
-          </article>
+          </div>
+
+          <div class="image-mode-pane" data-image-mode-pane="gemini">
+            <div class="image-lab-grid">
+              <article class="image-lab-card image-lab-preview">
+                <div class="variant-top">
+                  <div>
+                    <p class="section-label">GEMINI IMAGE</p>
+                    <h3>Gemini / Nano Banana 경로</h3>
+                  </div>
+                  <span class="status-pill dark-pill">API</span>
+                </div>
+                <img src="{{ result.banner_preview_path }}" alt="Gemini 경로용 배너 미리보기" />
+                <p class="mini-note">기본값은 현재 로컬 이미지 생성 경로를 유지합니다. 이 탭에서는 Gemini API 키를 입력했을 때만 별도 이미지 생성 경로를 사용합니다.</p>
+                <p class="mini-note">Gemini 경로는 업로드 이미지를 바로 배너 베이스로 쓰지 않고, API가 생성한 배경 이미지를 기준으로 새 배너를 만듭니다.</p>
+              </article>
+
+              <article class="image-lab-card image-lab-form-card">
+                <div class="studio-heading">
+                  <div>
+                    <p class="section-label">GEMINI / NANO BANANA</p>
+                    <h3>Gemini API로 다시 생성하기</h3>
+                  </div>
+                  <span class="status-dot">API Key</span>
+                </div>
+                <form
+                  action="/campaigns/{{ campaign.id }}/image-regenerate"
+                  method="post"
+                  class="image-regenerate-form"
+                  id="gemini-image-regenerate-form"
+                >
+                  <input type="hidden" name="image_mode" value="gemini" />
+                  <label>
+                    <span>Gemini API Key</span>
+                    <input
+                      type="password"
+                      name="gemini_api_key"
+                      placeholder="Gemini API Key를 입력하면 이 경로로만 생성합니다."
+                    />
+                  </label>
+                  <label>
+                    <span>Gemini 이미지 프롬프트</span>
+                    <textarea
+                      name="image_prompt"
+                      rows="13"
+                      placeholder="Nano Banana 스타일로 만들고 싶은 분위기와 구도를 적어 주세요."
+                    >{{ result.background_asset.prompt if result.background_asset else result.image_direction }}</textarea>
+                  </label>
+                  <div class="image-tip-list">
+                    <p><strong>사용 방식</strong></p>
+                    <p>기본 생성은 그대로 유지되고, 이 탭에서만 Gemini API를 사용합니다.</p>
+                    <p>예: photoreal dessert ad, clean product hero, soft daylight, no text, premium editorial</p>
+                    <p>API 키는 서버 환경변수 대신 이번 요청에만 사용할 수 있습니다.</p>
+                  </div>
+                  <button type="submit" class="secondary-btn" id="gemini-image-regenerate-button">Gemini로 다시 생성</button>
+                </form>
+              </article>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="workbench-pane" data-tab-pane="content">
+        <div class="studio-heading content-pane-heading">
+          <div>
+            <p class="section-label">LIVE CHANNEL PREVIEW</p>
+            <h3>3채널 미리보기와 문구 수정</h3>
+          </div>
+          <span class="status-dot">Preview</span>
+        </div>
         <div class="channel-preview-board">
           <article class="live-preview-card" aria-label="Instagram 피드 미리보기">
             <div class="device-frame">
@@ -271,174 +350,35 @@
   </div>
 
   <aside class="result-side">
-    <div class="banner-card">
-      <p class="section-label">BANNER PREVIEW</p>
-      <img src="{{ result.banner_preview_path }}" alt="광고 배너 미리보기" />
-      <a class="ghost-link banner-download" href="{{ result.banner_preview_path }}" download>배너 이미지 다운로드</a>
-    </div>
-    <div class="account-connect-card">
-      <div class="variant-top">
-        <div>
-          <p class="section-label">CHANNEL API SETUP</p>
-          <h3>채널 API 값 입력</h3>
-        </div>
-        <span class="status-pill">
-          {% if channel_connections and channel_connections.instagram.is_configured and channel_connections.threads.is_configured and channel_connections.blog.is_configured %}
-          3채널 연결 완료
-          {% else %}
-          입력 대기
-          {% endif %}
-        </span>
+    <div class="result-side-column">
+      <div class="banner-card">
+        <p class="section-label">BANNER PREVIEW</p>
+        <img src="{{ result.banner_preview_path }}" alt="광고 배너 미리보기" />
+        <a class="ghost-link banner-download" href="{{ result.banner_preview_path }}" download>배너 이미지 다운로드</a>
       </div>
-      <div class="provider-row">
-        <div>
-          <strong>Instagram</strong>
-          <small>
-            {% if channel_connections and channel_connections.instagram.is_configured %}
-            연결 완료 · IG User ID {{ channel_connections.instagram.instagram_user_id }}
-            {% else %}
-            Access Token + Instagram User ID 입력
-            {% endif %}
-          </small>
-        </div>
-        <form action="/channels/connect/instagram" method="post" class="channel-api-form">
-          <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
-          <input
-            type="text"
-            name="instagram_user_id"
-            placeholder="Instagram User ID"
-            value="{{ channel_connections.instagram.instagram_user_id if channel_connections else '' }}"
-            required
-          />
-          <input
-            type="password"
-            name="access_token"
-            placeholder="Instagram Access Token"
-            required
-          />
-          <button type="submit" class="outline-btn">Instagram API 저장</button>
-        </form>
-      </div>
-      <div class="provider-row">
-        <div>
-          <strong>Threads</strong>
-          <small>
-            {% if channel_connections and channel_connections.threads.is_configured %}
-            연결 완료 · Threads User ID {{ channel_connections.threads.threads_user_id }}
-            {% else %}
-            Access Token + Threads User ID 입력
-            {% endif %}
-          </small>
-        </div>
-        <form action="/channels/connect/threads" method="post" class="channel-api-form">
-          <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
-          <input
-            type="text"
-            name="threads_user_id"
-            placeholder="Threads User ID"
-            value="{{ channel_connections.threads.threads_user_id if channel_connections else '' }}"
-            required
-          />
-          <input
-            type="password"
-            name="access_token"
-            placeholder="Threads Access Token"
-            required
-          />
-          <button type="submit" class="outline-btn">Threads API 저장</button>
-        </form>
-      </div>
-      <div class="provider-row">
-        <div>
-          <strong>Blog</strong>
-          <small>
-            {% if channel_connections and channel_connections.blog.is_configured %}
-              {% if channel_connections.blog.platform == "naver_blog" %}
-            연결 완료 · naver_blog · {{ channel_connections.blog.blog_id }}
-              {% else %}
-            연결 완료 · wordpress · {{ channel_connections.blog.api_base_url }}
-              {% endif %}
-            {% else %}
-            Naver Blog 기준 블로그 ID + 네이버 로그인 정보 입력
-            {% endif %}
-          </small>
-        </div>
-        <form action="/channels/connect/blog" method="post" class="channel-api-form">
-          <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
-          <select name="platform" id="blog-platform-select">
-            <option value="naver_blog" {% if not channel_connections or channel_connections.blog.platform == "naver_blog" %}selected{% endif %}>Naver Blog (Playwright)</option>
-            <option value="wordpress" {% if channel_connections and channel_connections.blog.platform == "wordpress" %}selected{% endif %}>WordPress</option>
-          </select>
-          <div class="blog-platform-panel" data-blog-platform-panel="naver_blog">
-            <input
-              type="text"
-              name="blog_id"
-              id="naver-blog-id-input"
-              placeholder="Naver Blog ID"
-              value="{{ channel_connections.blog.blog_id if channel_connections and channel_connections.blog.platform == 'naver_blog' else '' }}"
-            />
-            <input
-              type="text"
-              name="category_id"
-              id="naver-category-id-input"
-              placeholder="Category ID (선택)"
-              value="{{ channel_connections.blog.category_id if channel_connections and channel_connections.blog.platform == 'naver_blog' else '' }}"
-            />
-            <button type="button" class="outline-btn" id="naver-blog-connect-button">네이버 로그인 창 열기</button>
-            <p class="mini-note" id="naver-blog-connect-status">
-              {% if channel_connections and channel_connections.blog.platform == "naver_blog" and channel_connections.blog.session_ready %}
-              연결된 브라우저 세션이 준비되어 있습니다. 필요하면 다시 로그인 창을 열어 세션을 갱신할 수 있습니다.
-              {% else %}
-              버튼을 누르면 Chromium 창이 열리고, 그 창에서 네이버 로그인 후 블로그 글쓰기 화면까지 들어가면 연결이 완료됩니다.
-              {% endif %}
-            </p>
+      {% if result.background_asset %}
+      <div class="background-prompt-card">
+        <div class="variant-top">
+          <div>
+            <p class="section-label">IMAGE API READY</p>
+            <h3>AI 배경 이미지 프롬프트</h3>
           </div>
-          <div class="blog-platform-panel" data-blog-platform-panel="wordpress">
-            <input
-              type="url"
-              name="api_base_url"
-              placeholder="https://example.com/wp-json/wp/v2"
-              value="{{ channel_connections.blog.api_base_url if channel_connections and channel_connections.blog.platform == 'wordpress' else '' }}"
-            />
-            <input
-              type="text"
-              name="wordpress_username"
-              placeholder="WordPress Username"
-              value="{{ channel_connections.blog.username if channel_connections and channel_connections.blog.platform == 'wordpress' else '' }}"
-            />
-            <input
-              type="password"
-              name="application_password"
-              placeholder="Application Password"
-            />
-            <button type="submit" class="outline-btn">Blog API 저장</button>
-          </div>
-        </form>
-      </div>
-      <p class="mini-note">네이버 블로그는 Playwright로 브라우저 자동화 로그인 후 발행합니다. 현재 저장된 값은 로컬 개발용 파일에 보관됩니다.</p>
-    </div>
-    {% if result.background_asset %}
-    <div class="background-prompt-card">
-      <div class="variant-top">
-        <div>
-          <p class="section-label">IMAGE API READY</p>
-          <h3>AI 배경 이미지 프롬프트</h3>
+          <span class="status-pill">{{ result.background_asset.status }}</span>
         </div>
-        <span class="status-pill">{{ result.background_asset.status }}</span>
+        <textarea id="background-prompt" class="prompt-box" readonly>{{ result.background_asset.prompt }}</textarea>
+        <button type="button" class="outline-btn copy-btn" data-copy-target="background-prompt">프롬프트 복사</button>
+        {% if result.background_asset.note %}
+        <p class="mini-note">{{ result.background_asset.note }}</p>
+        {% endif %}
+        {% if result.background_asset.image_path %}
+        <p class="mini-note">자동 생성 배경: {{ result.background_asset.provider }}</p>
+        {% else %}
+        <p class="mini-note">비용 방지 모드에서는 프롬프트만 만들고, GPT Image 또는 Nano Banana로 만든 이미지를 업로드하는 흐름입니다.</p>
+        {% endif %}
       </div>
-      <textarea id="background-prompt" class="prompt-box" readonly>{{ result.background_asset.prompt }}</textarea>
-      <button type="button" class="outline-btn copy-btn" data-copy-target="background-prompt">프롬프트 복사</button>
-      {% if result.background_asset.note %}
-      <p class="mini-note">{{ result.background_asset.note }}</p>
       {% endif %}
-      {% if result.background_asset.image_path %}
-      <p class="mini-note">자동 생성 배경: {{ result.background_asset.provider }}</p>
-      {% else %}
-      <p class="mini-note">비용 방지 모드에서는 프롬프트만 만들고, GPT Image 또는 Nano Banana로 만든 이미지를 업로드하는 흐름입니다.</p>
-      {% endif %}
-    </div>
-    {% endif %}
-    <div class="action-card">
+
+      <div class="action-card">
       {% if campaign %}
       <form action="/campaigns/{{ campaign.id }}/ready" method="post" class="prefill-form">
         <button type="submit" class="secondary-btn">예약 준비 완료로 표시</button>
@@ -510,6 +450,164 @@
         <button type="submit" class="secondary-btn">입력 유지하고 수정하기</button>
       </form>
       <a class="ghost-link" href="/">새 브리프로 시작하기</a>
+      </div>
+    </div>
+
+    <div class="result-side-column">
+      <div class="account-connect-card">
+        <div class="variant-top">
+          <div>
+            <p class="section-label">CHANNEL API SETUP</p>
+            <h3>채널 API 값 입력</h3>
+          </div>
+          <span class="status-pill">
+            {% if channel_connections and channel_connections.instagram.is_configured and channel_connections.threads.is_configured and channel_connections.blog.is_configured %}
+            3채널 연결 완료
+            {% else %}
+            입력 대기
+            {% endif %}
+          </span>
+        </div>
+        <div class="provider-row">
+          <div>
+            <strong>Instagram</strong>
+            <small>
+              {% if channel_connections and channel_connections.instagram.is_configured %}
+              연결 완료 · IG User ID {{ channel_connections.instagram.instagram_user_id }}
+              {% else %}
+              Access Token + Instagram User ID 입력
+              {% endif %}
+            </small>
+          </div>
+          <form action="/channels/connect/instagram" method="post" class="channel-api-form">
+            <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
+            <input
+              type="text"
+              name="instagram_user_id"
+              placeholder="Instagram User ID"
+              value="{{ channel_connections.instagram.instagram_user_id if channel_connections else '' }}"
+              required
+            />
+            <input
+              type="password"
+              name="access_token"
+              placeholder="Instagram Access Token"
+              required
+            />
+            <button type="submit" class="outline-btn">Instagram API 저장</button>
+          </form>
+        </div>
+        <div class="provider-row">
+          <div>
+            <strong>Threads</strong>
+            <small>
+              {% if channel_connections and channel_connections.threads.is_configured %}
+              연결 완료 · Threads User ID {{ channel_connections.threads.threads_user_id }}
+              {% else %}
+              Access Token + Threads User ID 입력
+              {% endif %}
+            </small>
+          </div>
+          <form action="/channels/connect/threads" method="post" class="channel-api-form">
+            <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
+            <input
+              type="text"
+              name="threads_user_id"
+              placeholder="Threads User ID"
+              value="{{ channel_connections.threads.threads_user_id if channel_connections else '' }}"
+              required
+            />
+            <input
+              type="password"
+              name="access_token"
+              placeholder="Threads Access Token"
+              required
+            />
+            <button type="submit" class="outline-btn">Threads API 저장</button>
+          </form>
+        </div>
+        <div class="provider-row">
+          <div>
+            <strong>Blog</strong>
+            <small>
+              {% if channel_connections and channel_connections.blog.is_configured %}
+                {% if channel_connections.blog.platform == "naver_blog" %}
+              연결 완료 · naver_blog · {{ channel_connections.blog.blog_id }}
+                {% else %}
+              연결 완료 · wordpress · {{ channel_connections.blog.api_base_url }}
+                {% endif %}
+              {% else %}
+              Naver Blog 기준 블로그 ID + 네이버 로그인 정보 입력
+              {% endif %}
+            </small>
+          </div>
+          <form action="/channels/connect/blog" method="post" class="channel-api-form">
+            <input type="hidden" name="redirect_to" value="/campaigns/{{ campaign.id if campaign else '' }}" />
+            <select name="platform" id="blog-platform-select">
+              <option value="naver_blog" {% if not channel_connections or channel_connections.blog.platform == "naver_blog" %}selected{% endif %}>Naver Blog (Playwright)</option>
+              <option value="wordpress" {% if channel_connections and channel_connections.blog.platform == "wordpress" %}selected{% endif %}>WordPress</option>
+            </select>
+            <div class="blog-platform-panel" data-blog-platform-panel="naver_blog">
+              <input
+                type="text"
+                name="blog_id"
+                id="naver-blog-id-input"
+                placeholder="Naver Blog ID"
+                value="{{ channel_connections.blog.blog_id if channel_connections and channel_connections.blog.platform == 'naver_blog' else '' }}"
+              />
+              <input
+                type="text"
+                name="category_id"
+                id="naver-category-id-input"
+                placeholder="Category ID (선택)"
+                value="{{ channel_connections.blog.category_id if channel_connections and channel_connections.blog.platform == 'naver_blog' else '' }}"
+              />
+              <button type="button" class="outline-btn" id="naver-blog-connect-button">네이버 로그인 창 열기</button>
+              <button type="button" class="ghost-link naver-complete-btn" id="naver-blog-complete-button" hidden>
+                글쓰기 화면 도착 완료
+              </button>
+              <div class="naver-connect-guide">
+                <p><strong>연결 방법</strong></p>
+                <p>1. `네이버 로그인 창 열기`를 누르면 Chromium 창이 열립니다.</p>
+                <p>2. 열린 창에서 네이버 로그인합니다.</p>
+                <p>3. 블로그 `글쓰기 화면`까지 진입합니다.</p>
+                <p>4. 글쓰기 화면이 열리면 이 페이지에서 자동으로 연결 완료 상태로 바뀝니다.</p>
+                <p>5. 첫 로그인 후에는 이 브라우저 프로필을 재사용해서 자동 로그인으로 이어질 수 있습니다.</p>
+                <p>6. 네이버가 새 기기 확인, CAPTCHA, 2차 인증을 요구하면 다시 로그인해야 합니다.</p>
+                <p>7. 글쓰기 화면이 이미 열렸는데도 진행 중이면 `글쓰기 화면 도착 완료`를 눌러 바로 저장할 수 있습니다.</p>
+              </div>
+              <p class="mini-note" id="naver-blog-connect-status">
+                {% if channel_connections and channel_connections.blog.platform == "naver_blog" and channel_connections.blog.session_ready %}
+                연결된 브라우저 세션이 준비되어 있습니다. 이후에는 저장된 브라우저 프로필로 자동 로그인 재사용을 먼저 시도합니다. 필요하면 다시 로그인 창을 열어 세션을 갱신할 수 있습니다.
+                {% else %}
+                로그인 창을 연 뒤 `글쓰기 화면`까지 들어가면 연결이 자동 완료됩니다. 첫 로그인 성공 후에는 저장된 브라우저 프로필을 재사용합니다. 글쓰기 화면이 뜨기 전에 창을 닫으면 연결되지 않습니다.
+                {% endif %}
+              </p>
+            </div>
+            <div class="blog-platform-panel" data-blog-platform-panel="wordpress">
+              <input
+                type="url"
+                name="api_base_url"
+                placeholder="https://example.com/wp-json/wp/v2"
+                value="{{ channel_connections.blog.api_base_url if channel_connections and channel_connections.blog.platform == 'wordpress' else '' }}"
+              />
+              <input
+                type="text"
+                name="wordpress_username"
+                placeholder="WordPress Username"
+                value="{{ channel_connections.blog.username if channel_connections and channel_connections.blog.platform == 'wordpress' else '' }}"
+              />
+              <input
+                type="password"
+                name="application_password"
+                placeholder="Application Password"
+              />
+              <button type="submit" class="outline-btn">Blog API 저장</button>
+            </div>
+          </form>
+        </div>
+        <p class="mini-note">네이버 블로그는 Playwright로 브라우저 자동화 로그인 후 발행합니다. 현재 저장된 값은 로컬 개발용 파일에 보관됩니다.</p>
+      </div>
     </div>
   </aside>
 </section>
@@ -579,7 +677,7 @@
   if (workbenchTabs) {
     const tabButtons = Array.from(workbenchTabs.querySelectorAll(".workbench-tab"));
     const panes = Array.from(workbenchTabs.querySelectorAll(".workbench-pane"));
-    const initialTab = workbenchTabs.dataset.activeWorkbenchTab || "image";
+    const initialTab = workbenchTabs.dataset.activeWorkbenchTab || "content";
 
     const activateTab = (tabName) => {
       tabButtons.forEach((button) => {
@@ -616,6 +714,8 @@
 
   const imageRegenerateForm = document.getElementById("image-regenerate-form");
   const imageRegenerateButton = document.getElementById("image-regenerate-button");
+  const geminiImageRegenerateForm = document.getElementById("gemini-image-regenerate-form");
+  const geminiImageRegenerateButton = document.getElementById("gemini-image-regenerate-button");
   const imageLoader = document.getElementById("image-generation-loader");
   const imageLoaderElapsed = document.getElementById("image-loader-elapsed");
   const imageLoaderStage = document.getElementById("image-loader-stage");
@@ -656,12 +756,22 @@
   };
 
   if (imageRegenerateForm && imageRegenerateButton && imageLoader) {
-    imageRegenerateForm.addEventListener("submit", () => {
+    const startImageLoader = (buttonLabel) => {
       const startedAt = Date.now();
       let phaseIndex = 0;
 
-      imageRegenerateButton.disabled = true;
-      imageRegenerateButton.textContent = "이미지 생성 중...";
+      if (imageRegenerateButton) {
+        imageRegenerateButton.disabled = true;
+      }
+      if (geminiImageRegenerateButton) {
+        geminiImageRegenerateButton.disabled = true;
+      }
+      if (buttonLabel === "gemini" && geminiImageRegenerateButton) {
+        geminiImageRegenerateButton.textContent = "Gemini 생성 중...";
+      }
+      if (buttonLabel === "default" && imageRegenerateButton) {
+        imageRegenerateButton.textContent = "이미지 생성 중...";
+      }
       document.body.classList.add("loading-active");
       imageLoader.classList.add("is-visible");
       imageLoader.setAttribute("aria-hidden", "false");
@@ -677,7 +787,12 @@
         phaseIndex += 1;
         showImagePhase(phaseIndex);
       }, 2400);
-    });
+    };
+
+    imageRegenerateForm.addEventListener("submit", () => startImageLoader("default"));
+    if (geminiImageRegenerateForm) {
+      geminiImageRegenerateForm.addEventListener("submit", () => startImageLoader("gemini"));
+    }
   }
 
   window.addEventListener("pageshow", () => {
@@ -690,6 +805,10 @@
       imageRegenerateButton.disabled = false;
       imageRegenerateButton.textContent = "이 이미지/프롬프트로 다시 생성";
     }
+    if (geminiImageRegenerateButton) {
+      geminiImageRegenerateButton.disabled = false;
+      geminiImageRegenerateButton.textContent = "Gemini로 다시 생성";
+    }
     if (imageTimerId) {
       window.clearInterval(imageTimerId);
       imageTimerId = null;
@@ -699,6 +818,32 @@
       imagePhaseId = null;
     }
   });
+
+  const imageModeTabs = document.getElementById("image-mode-tabs");
+  if (imageModeTabs) {
+    const imageModeButtons = Array.from(imageModeTabs.querySelectorAll(".image-mode-tab"));
+    const imageModePanes = Array.from(imageModeTabs.querySelectorAll(".image-mode-pane"));
+    const initialMode = imageModeTabs.dataset.activeImageMode || "default";
+
+    const activateImageMode = (modeName) => {
+      imageModeButtons.forEach((button) => {
+        const isActive = button.dataset.imageModeTarget === modeName;
+        button.classList.toggle("is-active", isActive);
+        button.setAttribute("aria-selected", String(isActive));
+      });
+      imageModePanes.forEach((pane) => {
+        const isActive = pane.dataset.imageModePane === modeName;
+        pane.classList.toggle("is-active", isActive);
+      });
+      imageModeTabs.dataset.activeImageMode = modeName;
+    };
+
+    imageModeButtons.forEach((button) => {
+      button.addEventListener("click", () => activateImageMode(button.dataset.imageModeTarget));
+    });
+
+    activateImageMode(initialMode);
+  }
 
   const blogPlatformSelect = document.getElementById("blog-platform-select");
   const blogPlatformPanels = Array.from(document.querySelectorAll("[data-blog-platform-panel]"));
@@ -722,9 +867,11 @@
   }
 
   const naverBlogConnectButton = document.getElementById("naver-blog-connect-button");
+  const naverBlogCompleteButton = document.getElementById("naver-blog-complete-button");
   const naverBlogStatus = document.getElementById("naver-blog-connect-status");
   const naverBlogIdInput = document.getElementById("naver-blog-id-input");
   const naverCategoryIdInput = document.getElementById("naver-category-id-input");
+  let naverConnectSessionId = "";
 
   if (naverBlogConnectButton && naverBlogStatus && naverBlogIdInput) {
     const pollNaverConnectStatus = async (sessionId) => {
@@ -743,6 +890,11 @@
         if (payload.status === "connected") {
           naverBlogConnectButton.disabled = false;
           naverBlogConnectButton.textContent = "네이버 로그인 창 다시 열기";
+          if (naverBlogCompleteButton) {
+            naverBlogCompleteButton.hidden = true;
+            naverBlogCompleteButton.disabled = false;
+            naverBlogCompleteButton.textContent = "글쓰기 화면 도착 완료";
+          }
           window.setTimeout(() => window.location.reload(), 1000);
           return;
         }
@@ -750,9 +902,17 @@
         if (payload.status === "failed") {
           naverBlogConnectButton.disabled = false;
           naverBlogConnectButton.textContent = "네이버 로그인 창 열기";
+          if (naverBlogCompleteButton) {
+            naverBlogCompleteButton.hidden = false;
+            naverBlogCompleteButton.disabled = false;
+            naverBlogCompleteButton.textContent = "글쓰기 화면 도착 완료";
+          }
           return;
         }
 
+        if (naverBlogCompleteButton) {
+          naverBlogCompleteButton.hidden = false;
+        }
         window.setTimeout(poll, 1800);
       };
 
@@ -771,7 +931,10 @@
 
       naverBlogConnectButton.disabled = true;
       naverBlogConnectButton.textContent = "창 여는 중...";
-      naverBlogStatus.textContent = "네이버 로그인 창을 준비하고 있습니다.";
+      naverBlogStatus.textContent = "네이버 로그인 창을 준비하고 있습니다. 열린 창에서 로그인 후 글쓰기 화면까지 들어가 주세요.";
+      if (naverBlogCompleteButton) {
+        naverBlogCompleteButton.hidden = true;
+      }
 
       const formData = new FormData();
       formData.append("blog_id", blogId);
@@ -790,10 +953,50 @@
       }
 
       const payload = await response.json();
-      naverBlogStatus.textContent = payload.message || "네이버 창이 열렸습니다. 로그인 후 잠시 기다려 주세요.";
+      naverConnectSessionId = payload.session_id || "";
+      naverBlogStatus.textContent = payload.message || "네이버 창이 열렸습니다. 로그인 후 글쓰기 화면까지 들어가 주세요.";
       naverBlogConnectButton.textContent = "로그인 진행 중...";
+      if (naverBlogCompleteButton) {
+        naverBlogCompleteButton.hidden = false;
+      }
       pollNaverConnectStatus(payload.session_id);
     });
+
+    if (naverBlogCompleteButton) {
+      naverBlogCompleteButton.addEventListener("click", async () => {
+        if (!naverConnectSessionId) {
+          naverBlogStatus.textContent = "먼저 로그인 창을 열고 글쓰기 화면까지 들어가 주세요.";
+          return;
+        }
+
+        naverBlogCompleteButton.disabled = true;
+        naverBlogCompleteButton.textContent = "연결 완료 저장 중...";
+
+        const formData = new FormData();
+        formData.append("session_id", naverConnectSessionId);
+
+        const response = await fetch("/channels/connect/blog/naver/complete", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          naverBlogStatus.textContent = "연결 완료 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+          naverBlogCompleteButton.disabled = false;
+          naverBlogCompleteButton.textContent = "글쓰기 화면 도착 완료";
+          return;
+        }
+
+        const payload = await response.json();
+        naverBlogStatus.textContent = payload.message || "연결 완료로 저장했습니다.";
+        naverBlogConnectButton.disabled = false;
+        naverBlogConnectButton.textContent = "네이버 로그인 창 다시 열기";
+        naverBlogCompleteButton.hidden = true;
+        naverBlogCompleteButton.disabled = false;
+        naverBlogCompleteButton.textContent = "글쓰기 화면 도착 완료";
+        window.setTimeout(() => window.location.reload(), 700);
+      });
+    }
   }
 
   const captionEditor = document.getElementById("live-caption-editor");

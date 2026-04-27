@@ -1227,6 +1227,10 @@ button:disabled {
   margin-top: 34px;
 }
 
+.content-pane-heading {
+  margin-top: 28px;
+}
+
 .editor-workbench {
   grid-template-columns: 1fr;
 }
@@ -1236,6 +1240,48 @@ button:disabled {
   grid-template-columns: minmax(320px, 0.9fr) minmax(320px, 1.1fr);
   gap: 18px;
   margin-top: 30px;
+}
+
+.image-mode-tabs {
+  position: relative;
+  z-index: 1;
+}
+
+.image-mode-tablist {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 28px;
+}
+
+.image-mode-tab {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 247, 239, 0.72);
+  box-shadow: none;
+}
+
+.image-mode-tab.is-active {
+  background: rgba(255, 255, 255, 0.94);
+  color: #2a201c;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.image-mode-pane {
+  display: none;
+}
+
+.image-mode-pane.is-active {
+  display: block;
+}
+
+.image-regenerate-form input[type="password"] {
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff7ef;
+  border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .image-lab-card {
@@ -1629,9 +1675,9 @@ button:disabled {
 
 .provider-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: 1fr;
   gap: 14px;
-  align-items: center;
+  align-items: start;
   margin-top: 14px;
   padding: 14px;
   border: 1px solid rgba(82, 59, 45, 0.1);
@@ -1639,10 +1685,15 @@ button:disabled {
   background: rgba(255, 248, 241, 0.72);
 }
 
+.provider-row > div:first-child {
+  min-width: 0;
+}
+
 .provider-row small {
   display: block;
   margin-top: 3px;
   color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .provider-row .outline-btn {
@@ -1654,7 +1705,7 @@ button:disabled {
 .channel-api-form {
   display: grid;
   gap: 10px;
-  width: min(340px, 100%);
+  width: 100%;
 }
 
 .channel-api-form input,
@@ -1672,6 +1723,22 @@ button:disabled {
   display: grid;
 }
 
+.naver-connect-guide {
+  display: grid;
+  gap: 6px;
+  margin-top: 2px;
+  padding: 14px;
+  border: 1px dashed rgba(82, 59, 45, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 250, 245, 0.8);
+}
+
+.naver-connect-guide p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.62;
+}
+
 .result-side {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1679,21 +1746,18 @@ button:disabled {
   align-items: start;
 }
 
+.result-side-column {
+  display: grid;
+  gap: 18px;
+  align-content: start;
+  min-width: 0;
+}
+
 .banner-card,
 .account-connect-card,
 .background-prompt-card,
 .action-card {
   min-width: 0;
-}
-
-.account-connect-card,
-.action-card {
-  grid-column: span 1;
-}
-
-.banner-card,
-.background-prompt-card {
-  grid-column: span 1;
 }
 
 .action-card {

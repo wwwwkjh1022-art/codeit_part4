@@ -1,5 +1,6 @@
 import base64
 import ipaddress
+import json
 import mimetypes
 import time
 from datetime import datetime
@@ -214,10 +215,13 @@ class DirectApiPublishAdapter(PublishAdapter):
 
         storage_state_path = self.settings.data_dir / "naver_blog_storage_state.json"
         write_url = _build_naver_blog_write_url(connection)
+        profile_dir = self.settings.data_dir / "naver_blog_profile"
+        profile_dir.mkdir(parents=True, exist_ok=True)
 
         async with async_playwright() as playwright:
             try:
-                browser = await playwright.chromium.launch(
+                context = await playwright.chromium.launch_persistent_context(
+                    user_data_dir=str(profile_dir),
                     headless=self.settings.naver_blog_headless,
                     slow_mo=self.settings.naver_blog_slowmo_ms,
                 )
@@ -230,12 +234,13 @@ class DirectApiPublishAdapter(PublishAdapter):
                         "`.venv/bin/playwright install-deps chromium`가 필요합니다."
                     ) from exc
                 raise
-            context_kwargs: dict[str, object] = {}
-            if storage_state_path.exists():
-                context_kwargs["storage_state"] = str(storage_state_path)
-            context = await browser.new_context(**context_kwargs)
             context.set_default_timeout(self.settings.naver_blog_timeout_ms)
-            page = await context.new_page()
+            if storage_state_path.exists():
+                try:
+                    await context.add_cookies(_storage_state_cookies(storage_state_path))
+                except Exception:
+                    pass
+            page = context.pages[0] if context.pages else await context.new_page()
 
             try:
                 await page.goto(write_url, wait_until="domcontentloaded")
@@ -254,7 +259,6 @@ class DirectApiPublishAdapter(PublishAdapter):
                 return published_url
             finally:
                 await context.close()
-                await browser.close()
 
     async def _login_naver_if_needed(self, page, connection) -> None:
         if "nid.naver.com" not in page.url and not await self._selector_exists(page, "#id"):
@@ -509,6 +513,15 @@ def _build_naver_blog_write_url(connection) -> str:
     if category_id:
         query = f"{query}&categoryNo={category_id}"
     return f"https://blog.naver.com/PostWriteForm.naver?{query}"
+
+
+def _storage_state_cookies(storage_state_path: Path) -> list[dict]:
+    raw = storage_state_path.read_text(encoding="utf-8").strip()
+    if not raw:
+        return []
+    payload = json.loads(raw)
+    cookies = payload.get("cookies", [])
+    return cookies if isinstance(cookies, list) else []
 
 
 def _absolute_url(settings: Settings, path: str | None) -> str | None:

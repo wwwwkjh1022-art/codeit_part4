@@ -209,6 +209,7 @@ ALLOW_PAID_IMAGE_GENERATION=false
 
 ## 포트폴리오 문서
 
+- 발표용 슬라이드 원고: `docs/PRESENTATION_DECK.md`
 - 개발 타임라인, 기술스택, 실험 과정, 막힌 부분과 해결 과정은 `docs/PORTFOLIO_TIMELINE.md`에 정리되어 있습니다.
 - Instagram/Blog API 연동 설계는 `docs/API_INTEGRATION_GUIDE.md`에 정리되어 있습니다.
 - n8n 자동화 설계와 import용 workflow는 `docs/N8N_AUTOMATION_GUIDE.md`, `automations/n8n_campaign_automation.json`에 정리되어 있습니다.
