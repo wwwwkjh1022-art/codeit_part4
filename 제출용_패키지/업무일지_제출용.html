@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>소상공인 AI 홍보 자동화 서비스 업무일지</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 16mm;
+      }
+
+      :root {
+        --ink: #24201d;
+        --muted: #6e625b;
+        --accent: #c85f3f;
+        --accent-soft: #fff1ea;
+        --line: #e7d8cf;
+        --panel: #fffdfa;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Noto Sans KR", "NanumGothic", sans-serif;
+        color: var(--ink);
+        background: #f7f2ed;
+        line-height: 1.65;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .page {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 0 auto;
+        background: white;
+        padding: 14mm;
+      }
+
+      .hero {
+        padding: 22px 24px;
+        border: 1px solid var(--line);
+        border-radius: 24px;
+        background:
+          radial-gradient(circle at top right, rgba(200, 95, 63, 0.16), transparent 24%),
+          linear-gradient(135deg, #fffaf6, #fff3eb);
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 30px;
+        line-height: 1.22;
+      }
+
+      .hero p {
+        margin: 14px 0 0;
+        color: var(--muted);
+        font-size: 14px;
+      }
+
+      .meta-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 18px;
+      }
+
+      .meta-card {
+        padding: 14px 16px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.84);
+      }
+
+      .meta-card strong {
+        display: block;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+
+      .meta-card span {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      section {
+        margin-top: 22px;
+      }
+
+      h2 {
+        margin: 0 0 12px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #f1dfd5;
+        font-size: 21px;
+      }
+
+      h3 {
+        margin: 0 0 10px;
+        font-size: 17px;
+      }
+
+      h4 {
+        margin: 14px 0 8px;
+        font-size: 14px;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      ul {
+        margin: 8px 0 0;
+        padding-left: 18px;
+      }
+
+      li + li {
+        margin-top: 5px;
+      }
+
+      .summary-box {
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: var(--panel);
+      }
+
+      .phase-box {
+        margin-top: 10px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: #fff8f3;
+        border: 1px dashed #ebd4c6;
+      }
+
+      .weight-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .weight-card {
+        padding: 12px 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        background: #fff;
+      }
+
+      .weight-card strong {
+        display: block;
+        color: var(--accent);
+        font-size: 20px;
+      }
+
+      .weight-card span {
+        display: block;
+        margin-top: 6px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .day-card {
+        margin-top: 14px;
+        padding: 16px 18px;
+        border: 1px solid var(--line);
+        border-radius: 20px;
+        background: #fff;
+        page-break-inside: avoid;
+      }
+
+      .day-card .date {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .split {
+        display: grid;
+        grid-template-columns: 1.3fr 0.9fr;
+        gap: 18px;
+      }
+
+      .note-box {
+        margin-top: 10px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: #fff8f3;
+        border: 1px solid #f0ddd1;
+      }
+
+      .closing {
+        padding: 18px 20px;
+        border-radius: 20px;
+        background: linear-gradient(135deg, #fff7f2, #fff1ea);
+        border: 1px solid var(--line);
+      }
+
+      .footer {
+        margin-top: 20px;
+        color: var(--muted);
+        font-size: 11px;
+        text-align: right;
+      }
+
+      @media print {
+        body {
+          background: white;
+        }
+
+        .page {
+          width: auto;
+          min-height: auto;
+          margin: 0;
+          padding: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <p class="eyebrow">Work Log</p>
+        <h1>소상공인 AI 홍보 자동화 서비스 업무일지</h1>
+        <p>
+          소상공인이 간단한 브리프만 입력해도 Instagram, Threads, Blog용 홍보 콘텐츠와
+          배너 이미지를 생성하고, 결과 화면에서 수정 후 게시 준비까지 이어갈 수 있는
+          서비스형 MVP를 구현한 과정을 정리한 문서이다.
+        </p>
+        <div class="meta-grid">
+          <div class="meta-card">
+            <strong>프로젝트명</strong>
+            <span>소상공인 AI 홍보 자동화 서비스</span>
+          </div>
+          <div class="meta-card">
+            <strong>정리 기간</strong>
+            <span>2026-04-13 ~ 2026-04-27</span>
+          </div>
+          <div class="meta-card">
+            <strong>개발 형태</strong>
+            <span>FastAPI 기반 MVP 구현</span>
+          </div>
+        </div>
+      </header>
+
+      <section>
+        <h2>1. 작업 기간과 진행 방식</h2>
+        <div class="summary-box">
+          <p>이번 프로젝트는 크게 두 단계로 나누어 진행했다.</p>
+          <div class="phase-box">
+            <strong>1단계: 2026-04-13 ~ 2026-04-22</strong>
+            <p>문제 정의, 기능 기획, 채널별 요구사항 조사, 서비스 구조 구상</p>
+          </div>
+          <div class="phase-box">
+            <strong>2단계: 2026-04-23 ~ 2026-04-27</strong>
+            <p>실제 구현, 테스트, UI 개선, 문서화, 제출 자료 정리</p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>2. 전체 작업 비중 요약</h2>
+        <div class="weight-grid">
+          <div class="weight-card">
+            <strong>20%</strong>
+            <span>서비스 구조 설계 및 FastAPI MVP 구성</span>
+          </div>
+          <div class="weight-card">
+            <strong>20%</strong>
+            <span>AI 생성 구조 및 결과 스키마 설계</span>
+          </div>
+          <div class="weight-card">
+            <strong>20%</strong>
+            <span>이미지 생성 및 배너 미리보기 개선</span>
+          </div>
+          <div class="weight-card">
+            <strong>20%</strong>
+            <span>게시, 예약, 채널 연동 기능 구현</span>
+          </div>
+          <div class="weight-card">
+            <strong>20%</strong>
+            <span>테스트, 문서화, 발표 및 제출 자료 정리</span>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>3. 일자별 업무일지</h2>
+
+        <article class="day-card">
+          <span class="date">2026-04-13 ~ 2026-04-15</span>
+          <div class="split">
+            <div>
+              <h3>프로젝트 방향 확정</h3>
+              <ul>
+                <li>프로젝트 주제를 소상공인 대상 AI 홍보 자동화로 확정했다.</li>
+                <li>단순 문구 생성기보다 실제 게시 준비까지 이어지는 서비스 흐름을 목표로 잡았다.</li>
+                <li>Instagram, Threads, Blog를 한 번에 다루는 구조가 더 설득력 있다고 판단했다.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>집중한 내용</h4>
+              <ul>
+                <li>문제 정의</li>
+                <li>사용자 시나리오 구상</li>
+                <li>채널 선정 이유 정리</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-box">
+            <strong>정리한 결론</strong>
+            <p>사용자는 "글을 잘 쓰는 사람"이 아니라 "홍보할 시간이 부족한 사장님"이라고 보고, 만들기 쉬운 흐름을 우선했다.</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-16 ~ 2026-04-18</span>
+          <div class="split">
+            <div>
+              <h3>서비스 구조와 기술 스택 구상</h3>
+              <ul>
+                <li>`브리프 입력 -> 초안 생성 -> 이미지 수정 -> 채널별 검수 -> 예약/게시` 구조를 구상했다.</li>
+                <li>FastAPI, Jinja2 SSR, JSON API를 함께 쓰는 방향을 검토했다.</li>
+                <li>향후 자동화 확장을 고려해 n8n 연동 가능성도 같이 정리했다.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>집중한 내용</h4>
+              <ul>
+                <li>아키텍처 구상</li>
+                <li>기술 스택 선택</li>
+                <li>설명 가능한 구조 만들기</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-box">
+            <strong>배운 점</strong>
+            <p>프로젝트를 빨리 만드는 것과, 나중에 설명 가능한 구조로 만드는 것은 다르다는 점을 체감했다.</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-19 ~ 2026-04-22</span>
+          <div class="split">
+            <div>
+              <h3>채널별 결과 구조와 MVP 범위 정리</h3>
+              <ul>
+                <li>Instagram은 짧고 정보가 바로 보이는 문구, Threads는 대화형 문구, Blog는 검색형 제목 중심으로 기준을 세웠다.</li>
+                <li>이미지 생성은 provider 교체가 가능하도록, 게시는 채널별 adapter 구조로 가는 방향을 정했다.</li>
+                <li>로컬에서 빠르게 검증 가능한 MVP 범위를 우선 정리했다.</li>
+              </ul>
+            </div>
+            <div>
+              <h4>집중한 내용</h4>
+              <ul>
+                <li>결과 스키마 기획</li>
+                <li>이미지/게시 구조 분리</li>
+                <li>우선순위 조정</li>
+              </ul>
+            </div>
+          </div>
+          <div class="note-box">
+            <strong>정리한 결론</strong>
+            <p>모든 기능을 한 번에 완성하기보다, 먼저 실제로 작동하는 end-to-end 흐름을 만드는 것이 더 중요했다.</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-23</span>
+          <h3>FastAPI 기반 MVP 뼈대 구성</h3>
+          <ul>
+            <li>프로젝트 폴더 구조와 Python 가상환경, 실행 구조를 정리했다.</li>
+            <li>`app`, `routes`, `services`, `schemas`, `templates`, `static`, `tests` 구조로 시작했다.</li>
+            <li>입력 페이지, 결과 페이지, health check 라우트를 포함한 MVP 기본 흐름을 완성했다.</li>
+            <li>제출용 보고서 PDF와 README 링크도 함께 정리했다.</li>
+          </ul>
+          <div class="note-box">
+            <strong>당일 작업 비중</strong>
+            <p>구조 설계 및 초기 세팅 45% / 기본 라우트·템플릿 구성 35% / 제출 자료 정리 20%</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-24</span>
+          <h3>이미지 생성 구조와 SD3.5 wrapper 연동</h3>
+          <ul>
+            <li>이미지 생성 구조를 provider 교체형으로 정리했다.</li>
+            <li>로컬 SD3.5 wrapper 연결 구조를 추가했다.</li>
+            <li>wrapper 서버가 없거나 추론이 불안정할 때를 대비해 fallback 흐름을 넣었다.</li>
+            <li>배경 이미지와 배너 생성이 연결되는 전체 파이프라인을 정리했다.</li>
+          </ul>
+          <div class="note-box">
+            <strong>해결 포인트</strong>
+            <p>실제 모델이 불안정해도 발표나 시연에서 흐름이 끊기지 않도록 Pillow 기반 local fallback을 병행했다.</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-25</span>
+          <h3>AI 생성 구조와 저장 흐름 보강</h3>
+          <ul>
+            <li>OpenAI 기반 광고 문구 생성 구조를 다듬고 mock fallback을 보완했다.</li>
+            <li>Instagram, Threads, Blog용 채널 패키지 구조를 정리했다.</li>
+            <li>결과 저장소를 붙여 생성 이력, 재생성, 상태 관리를 할 수 있게 했다.</li>
+            <li>테스트 코드를 늘려 회귀를 막는 방향으로 작업했다.</li>
+          </ul>
+          <div class="note-box">
+            <strong>배운 점</strong>
+            <p>생성 품질만큼이나 생성 이후 결과를 저장하고 다시 꺼내 쓰는 구조가 서비스성에 큰 영향을 준다는 점을 느꼈다.</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-26</span>
+          <h3>결과 페이지 UX와 이미지 재생성 흐름 개선</h3>
+          <ul>
+            <li>브리프 입력 단계와 이미지 생성 단계를 분리했다.</li>
+            <li>결과 페이지 상단에서 참고 이미지를 넣고 다시 생성할 수 있도록 바꿨다.</li>
+            <li>생성 중 로딩 화면, 경과 시간, 현재 단계 표시를 추가했다.</li>
+            <li>3채널 미리보기와 채널별 문구 수정 UI를 정리했다.</li>
+            <li>업로드 이미지가 있을 때는 사진을 최대한 살린 배너 미리보기가 나오도록 보완했다.</li>
+          </ul>
+          <div class="note-box">
+            <strong>해결 포인트</strong>
+            <p>기능이 많아질수록 화면이 복잡해지는 문제를 탭, 카드, 작업 순서 분리로 해결했다.</p>
+          </div>
+        </article>
+
+        <article class="day-card">
+          <span class="date">2026-04-27</span>
+          <h3>게시 연동, 네이버 블로그 UX, 발표 및 제출 자료 마무리</h3>
+          <ul>
+            <li>Instagram, Threads direct API 게시 구조를 정리했다.</li>
+            <li>Naver Blog는 Playwright 기반 연결·게시 흐름을 보완했다.</li>
+            <li>네이버 로그인 후 글쓰기 화면 진입을 감지하는 로직을 개선했다.</li>
+            <li>자동 감지가 실패할 때를 대비해 수동 완료 버튼도 추가했다.</li>
+            <li>브라우저 프로필 재사용으로 자동 로그인 흐름을 최대한 살리도록 보완했다.</li>
+            <li>발표 자료, README, API 가이드, 제출 문서를 최신 상태로 정리했다.</li>
+          </ul>
+          <div class="note-box">
+            <strong>당일 작업 비중</strong>
+            <p>게시 연동 및 네이버 블로그 UX 보완 45% / 레이아웃 마무리 25% / 발표·제출 자료 정리 30%</p>
+          </div>
+        </article>
+      </section>
+
+      <section>
+        <h2>4. 프로젝트 전반에서 신경 쓴 부분</h2>
+        <div class="summary-box">
+          <ul>
+            <li>단순 생성이 아니라 이미지 재생성, 채널별 미리보기, 문구 수정, 계정 연결, 예약/게시까지 이어지는 흐름을 만들려고 했다.</li>
+            <li>OpenAI 실패 시 mock fallback, SD 실패 시 local fallback, 네이버 블로그 연결 실패 시 수동 완료 fallback처럼 전체 흐름이 끊기지 않도록 구성했다.</li>
+            <li>README, API 문서, 자동화 문서, 포트폴리오 타임라인, 발표 자료를 함께 정리해 설명 가능한 프로젝트 형태로 마무리했다.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section>
+        <h2>5. 사용 기술 정리</h2>
+        <div class="split">
+          <div class="summary-box">
+            <h4>Backend / Frontend</h4>
+            <ul>
+              <li>Python 3.12</li>
+              <li>FastAPI</li>
+              <li>Uvicorn</li>
+              <li>Pydantic / Pydantic Settings</li>
+              <li>Jinja2 SSR</li>
+              <li>HTML / CSS / Vanilla JavaScript</li>
+            </ul>
+          </div>
+          <div class="summary-box">
+            <h4>AI / Automation / Test</h4>
+            <ul>
+              <li>OpenAI Responses API</li>
+              <li>Pillow</li>
+              <li>Local SD3.5 wrapper 구조</li>
+              <li>Playwright</li>
+              <li>n8n 연동 구조</li>
+              <li>pytest / pytest-asyncio</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>6. 최종 소감</h2>
+        <div class="closing">
+          <p>
+            이번 작업은 단순히 AI API를 붙이는 수준이 아니라, 실제로 사용할 수 있는 서비스
+            흐름을 설계하는 경험에 가까웠다. 기능 하나를 구현할 때마다 "이 결과를 사용자가
+            다음에 어떻게 쓸까"를 함께 고민해야 했고, 그 과정에서 생성, 저장, 수정, 게시 준비,
+            문서화까지 전체 서비스를 보는 시야가 중요하다는 점을 배울 수 있었다.
+          </p>
+          <p style="margin-top: 12px;">
+            특히 fallback 구조, 결과 페이지 UX, 채널별 게시 전략 분리, 제출 문서 정리를 통해
+            단순 데모를 넘어 설명 가능한 서비스형 MVP로 프로젝트를 마무리할 수 있었다.
+          </p>
+        </div>
+      </section>
+
+      <p class="footer">소상공인 AI 홍보 자동화 서비스 · 제출용 업무일지 정리본</p>
+    </main>
+  </body>
+</html>
